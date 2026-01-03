@@ -1,72 +1,97 @@
-require('dotenv').config();
 const express = require('express');
-const mongoose = require('mongoose');
 const cors = require('cors');
-const helmet = require('helmet');
-const rateLimit = require('express-rate-limit');
+const dotenv = require('dotenv');
 const path = require('path');
 
-const authRoutes = require('./routes/auth');
-const generatorRoutes = require('./routes/generators');
-const productRoutes = require('./routes/products');
-const recommendationRoutes = require('./routes/recommendations');
-const analyticsRoutes = require('./routes/analytics');
-const orderRoutes = require('./routes/orders');
-
-const errorHandler = require('./middleware/errorHandler');
-const connectDB = require('./config/db');
+// Load environment variables
+dotenv.config();
 
 const app = express();
 
-connectDB();
+// Middleware
+app.use(cors());
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 
-app.use(helmet());
-app.use(cors({
-  origin: process.env.FRONTEND_URL || 'http://localhost:3000',
-  credentials: true
-}));
-
-const limiter = rateLimit({
-  windowMs: 15 * 60 * 1000,
-  max: 100
-});
-app.use(limiter);
-
-app.use(express.json({ limit: '50mb' }));
-app.use(express.urlencoded({ limit: '50mb', extended: true }));
-app.use(express.static(path.join(__dirname, 'public')));
-
-app.use((req, res, next) => {
-  console.log(`[${new Date().toISOString()}] ${req.method} ${req.path}`);
-  next();
-});
-
-app.use('/api/auth', authRoutes);
-app.use('/api/generators', generatorRoutes);
-app.use('/api/products', productRoutes);
-app.use('/api/recommendations', recommendationRoutes);
-app.use('/api/analytics', analyticsRoutes);
-app.use('/api/orders', orderRoutes);
-
-app.get('/api/health', (req, res) => {
-  res.json({ status: 'ok', timestamp: new Date() });
-});
-
-app.use(errorHandler);
-
+// Environment variables
 const PORT = process.env.PORT || 5000;
-const server = app.listen(PORT, () => {
-  console.log(`✅ BaneWorkout API running on port ${PORT}`);
+const NODE_ENV = process.env.NODE_ENV || 'development';
+
+// Health check route
+app.get('/api/health', (req, res) => {
+  res.json({
+    status: 'OK',
+    message: 'Server is running',
+    timestamp: new Date().toISOString(),
+    environment: NODE_ENV
+  });
 });
 
+// Root API endpoint
+app.get('/api', (req, res) => {
+  res.json({
+    message: 'Welcome to BaneWorkout API',
+    version: '1.0.0',
+    endpoints: {
+      health: '/api/health',
+      workouts: '/api/workouts',
+      exercises: '/api/exercises',
+      users: '/api/users'
+    }
+  });
+});
+
+// Placeholder routes
+app.get('/api/workouts', (req, res) => {
+  res.json({ message: 'Workouts endpoint' });
+});
+
+app.get('/api/exercises', (req, res) => {
+  res.json({ message: 'Exercises endpoint' });
+});
+
+app.get('/api/users', (req, res) => {
+  res.json({ message: 'Users endpoint' });
+});
+
+// Error handling middleware
+app.use((err, req, res, next) => {
+  console.error(err.stack);
+  res.status(err.status || 500).json({
+    error: {
+      message: err.message || 'Internal Server Error',
+      status: err.status || 500
+    }
+  });
+});
+
+// 404 handler
+app.use((req, res) => {
+  res.status(404).json({
+    error: {
+      message: 'Route not found',
+      path: req.originalUrl
+    }
+  });
+});
+
+// Start server
+const server = app.listen(PORT, () => {
+  console.log(`\n=================================`);
+  console.log(`BaneWorkout Server Running`);
+  console.log(`=================================`);
+  console.log(`Port: ${PORT}`);
+  console.log(`Environment: ${NODE_ENV}`);
+  console.log(`Time: ${new Date().toISOString()}`);
+  console.log(`=================================\n`);
+});
+
+// Graceful shutdown
 process.on('SIGTERM', () => {
   console.log('SIGTERM signal received: closing HTTP server');
   server.close(() => {
     console.log('HTTP server closed');
-    mongoose.connection.close(false, () => {
-      console.log('MongoDB connection closed');
-      process.exit(0);
-    });
+    process.exit(0);
   });
 });
 
