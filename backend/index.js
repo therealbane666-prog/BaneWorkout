@@ -8,6 +8,10 @@ const stripe = require('stripe');
 const mongoose = require('mongoose');
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
+const rateLimit = require('express-rate-limit');
+const { sendOrderConfirmation } = require('./email-service');
+const { generateWeeklyStats } = require('./scheduled-jobs');
+const { sendWeeklyReport } = require('./email-service');
 
 // Load environment variables
 dotenv.config();
@@ -15,23 +19,68 @@ dotenv.config();
 // Initialize Express app
 const app = express();
 
+// Rate limiting configuration
+const apiLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 100, // Limit each IP to 100 requests per windowMs
+  message: 'Too many requests from this IP, please try again later.',
+});
+
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 5, // Limit each IP to 5 requests per windowMs
+  message: 'Too many authentication attempts, please try again later.',
+});
+
+const adminLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 10, // Limit each IP to 10 requests per windowMs
+  message: 'Too many admin requests, please try again later.',
+});
+
 // Middleware
 app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Initialize Stripe
-const stripeClient = stripe(process.env.STRIPE_SECRET_KEY);
+// Apply rate limiting to all API routes
+app.use('/api/', apiLimiter);
+
+// Initialize Stripe (with safety check)
+let stripeClient;
+if (process.env.STRIPE_SECRET_KEY) {
+  stripeClient = stripe(process.env.STRIPE_SECRET_KEY);
+  console.log('✅ Stripe initialized');
+} else {
+  console.warn('⚠️  Stripe not initialized - STRIPE_SECRET_KEY missing');
+}
 
 // ============================================================================
 // DATABASE SETUP
 // ============================================================================
 
-// MongoDB connection
-mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/workoutbrothers', {
+// MongoDB connection with better error handling
+const mongoUri = process.env.MONGODB_URI || 'mongodb://localhost:27017/workoutbrothers';
+
+mongoose.connect(mongoUri, {
   useNewUrlParser: true,
   useUnifiedTopology: true,
-}).catch(err => console.error('MongoDB connection error:', err));
+  serverSelectionTimeoutMS: 5000, // Timeout after 5s instead of 30s
+}).then(() => {
+  console.log('✅ MongoDB connected successfully');
+}).catch(err => {
+  console.error('❌ MongoDB connection error:', err.message);
+  console.warn('⚠️  Application will continue but database operations will fail');
+});
+
+// Handle MongoDB connection events
+mongoose.connection.on('error', (err) => {
+  console.error('❌ MongoDB error:', err.message);
+});
+
+mongoose.connection.on('disconnected', () => {
+  console.warn('⚠️  MongoDB disconnected');
+});
 
 // User Schema
 const userSchema = new mongoose.Schema({
@@ -137,7 +186,7 @@ const authenticateToken = (req, res, next) => {
 // ============================================================================
 
 // Register
-app.post('/api/auth/register', async (req, res) => {
+app.post('/api/auth/register', authLimiter, async (req, res) => {
   try {
     const { username, email, password } = req.body;
 
@@ -186,7 +235,7 @@ app.post('/api/auth/register', async (req, res) => {
 });
 
 // Login
-app.post('/api/auth/login', async (req, res) => {
+app.post('/api/auth/login', authLimiter, async (req, res) => {
   try {
     const { email, password } = req.body;
 
@@ -641,6 +690,14 @@ app.post('/api/orders', authenticateToken, async (req, res) => {
     cart.updatedAt = Date.now();
     await cart.save();
 
+    // Send order confirmation email
+    try {
+      const user = { username: req.user.username, email: req.user.email };
+      await sendOrderConfirmation(order, user);
+    } catch (emailError) {
+      console.warn('⚠️  Failed to send order confirmation email:', emailError.message);
+    }
+
     res.status(201).json({
       message: 'Order created successfully',
       order,
@@ -686,6 +743,10 @@ app.put('/api/orders/:id/status', authenticateToken, async (req, res) => {
 // Create payment intent
 app.post('/api/payments/create-intent', authenticateToken, async (req, res) => {
   try {
+    if (!stripeClient) {
+      return res.status(503).json({ error: 'Payment processing not available - Stripe not configured' });
+    }
+
     const { orderId } = req.body;
 
     if (!orderId) {
@@ -730,6 +791,10 @@ app.post('/api/payments/create-intent', authenticateToken, async (req, res) => {
 // Confirm payment
 app.post('/api/payments/confirm', authenticateToken, async (req, res) => {
   try {
+    if (!stripeClient) {
+      return res.status(503).json({ error: 'Payment processing not available - Stripe not configured' });
+    }
+
     const { paymentIntentId } = req.body;
 
     if (!paymentIntentId) {
@@ -769,6 +834,10 @@ app.post('/api/payments/confirm', authenticateToken, async (req, res) => {
 
 // Webhook for Stripe events
 app.post('/api/payments/webhook', express.raw({ type: 'application/json' }), async (req, res) => {
+  if (!stripeClient) {
+    return res.status(503).json({ error: 'Webhook processing not available - Stripe not configured' });
+  }
+
   const sig = req.headers['stripe-signature'];
 
   try {
@@ -838,6 +907,76 @@ app.get('/api/categories', async (req, res) => {
 });
 
 // ============================================================================
+// ADMIN & STATISTICS ROUTES
+// ============================================================================
+
+// Get business statistics (admin)
+app.get('/api/admin/stats', adminLimiter, authenticateToken, async (req, res) => {
+  try {
+    const { period = 'week' } = req.query;
+    
+    let startDate;
+    const now = new Date();
+    
+    switch (period) {
+      case 'day':
+        startDate = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+        break;
+      case 'week':
+        startDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+        break;
+      case 'month':
+        startDate = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+        break;
+      default:
+        startDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+    }
+
+    const orders = await Order.find({
+      createdAt: { $gte: startDate, $lte: now },
+    });
+
+    const totalRevenue = orders.reduce((sum, order) => sum + order.totalAmount, 0);
+    const totalOrders = orders.length;
+
+    const newUsers = await User.countDocuments({
+      createdAt: { $gte: startDate, $lte: now },
+    });
+
+    const productCount = await Product.countDocuments();
+    const lowStockCount = await Product.countDocuments({ stock: { $lt: 10 } });
+
+    res.json({
+      period,
+      startDate,
+      endDate: now,
+      totalRevenue: totalRevenue.toFixed(2),
+      totalOrders,
+      newUsers,
+      averageOrderValue: totalOrders > 0 ? (totalRevenue / totalOrders).toFixed(2) : 0,
+      productCount,
+      lowStockCount,
+    });
+  } catch (error) {
+    console.error('Get stats error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Generate and send weekly report manually (admin)
+app.post('/api/admin/send-report', adminLimiter, authenticateToken, async (req, res) => {
+  try {
+    const stats = await generateWeeklyStats(Order, Product, User);
+    await sendWeeklyReport(stats);
+    
+    res.json({ message: 'Weekly report sent successfully', stats });
+  } catch (error) {
+    console.error('Send report error:', error);
+    res.status(500).json({ error: 'Failed to send report' });
+  }
+});
+
+// ============================================================================
 // ERROR HANDLING
 // ============================================================================
 
@@ -857,9 +996,48 @@ app.use((err, req, res, next) => {
 // ============================================================================
 
 const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => {
-  console.log(`WorkoutBrothers API server running on port ${PORT}`);
+
+// Handle uncaught exceptions
+process.on('uncaughtException', (error) => {
+  console.error('❌ Uncaught Exception:', error);
+  console.error('Stack trace:', error.stack);
+  // Don't exit the process - keep server running
+});
+
+// Handle unhandled promise rejections
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('❌ Unhandled Rejection at:', promise);
+  console.error('Reason:', reason);
+  // Don't exit the process - keep server running
+});
+
+// Graceful shutdown
+process.on('SIGTERM', () => {
+  console.log('💤 SIGTERM signal received: closing server gracefully');
+  server.close(() => {
+    console.log('✅ Server closed');
+    mongoose.connection.close(false, () => {
+      console.log('✅ MongoDB connection closed');
+      process.exit(0);
+    });
+  });
+});
+
+const server = app.listen(PORT, () => {
+  console.log(`✅ WorkoutBrothers API server running on port ${PORT}`);
   console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
+  console.log(`MongoDB: ${process.env.MONGODB_URI ? 'Configured' : 'Using default'}`);
+  console.log(`Stripe: ${process.env.STRIPE_SECRET_KEY ? 'Configured' : 'Not configured'}`);
+  
+  // Initialize scheduled jobs (weekly reports, stock monitoring)
+  try {
+    const { initializeJobs } = require('./scheduled-jobs');
+    initializeJobs({ Order, Product, User });
+    console.log('✅ Scheduled jobs initialized successfully');
+  } catch (error) {
+    console.warn('⚠️  Scheduled jobs not initialized:', error.message);
+    console.warn('Weekly reports and stock monitoring will not run automatically');
+  }
 });
 
 module.exports = app;
