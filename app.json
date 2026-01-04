@@ -1,0 +1,35 @@
+{
+  "name": "WorkoutBrothers",
+  "description": "WorkoutBrothers - E-Commerce Platform for Fitness",
+  "repository": "https://github.com/therealbane666-prog/BaneWorkout",
+  "keywords": ["node", "express", "mongodb", "ecommerce", "stripe", "fitness"],
+  "success_url": "/api/health",
+  "addons": ["mongolab: sandbox"],
+  "env": {
+    "NODE_ENV": {
+      "description": "Node environment",
+      "value": "production"
+    },
+    "JWT_SECRET":  {
+      "description": "Secret key for JWT tokens",
+      "generator": "secret"
+    },
+    "STRIPE_PUBLIC_KEY": {
+      "description": "Stripe Publishable Key (pk_test_... )",
+      "required": false
+    },
+    "STRIPE_SECRET_KEY": {
+      "description": "Stripe Secret Key (sk_test_...)",
+      "required": false
+    },
+    "STRIPE_WEBHOOK_SECRET": {
+      "description": "Stripe Webhook Secret (whsec_...)",
+      "required": false
+    }
+  },
+  "buildpacks": [
+    {
+      "url": "heroku/nodejs"
+    }
+  ]
+}
