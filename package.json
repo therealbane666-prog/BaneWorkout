@@ -7,6 +7,7 @@
     "start": "node backend/index.js",
     "dev": "nodemon backend/index.js",
     "seed": "node backend/seed-products.js",
+    "check-config": "node backend/check-config.js",
     "test": "jest"
   },
   "keywords": [
