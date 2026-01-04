@@ -1,29 +1,42 @@
 {
   "name": "WorkoutBrothers",
-  "description": "WorkoutBrothers - E-Commerce Platform for Fitness",
+  "description": "WorkoutBrothers - Plateforme E-Commerce pour la Préparation Physique et Mentale",
   "repository": "https://github.com/therealbane666-prog/BaneWorkout",
-  "keywords": ["node", "express", "mongodb", "ecommerce", "stripe", "fitness"],
+  "keywords": ["node", "express", "mongodb", "ecommerce", "stripe", "fitness", "tactical", "nutrition"],
   "success_url": "/api/health",
-  "addons": ["mongolab: sandbox"],
+  "addons": ["mongolab:sandbox"],
   "env": {
     "NODE_ENV": {
       "description": "Node environment",
       "value": "production"
     },
-    "JWT_SECRET":  {
+    "JWT_SECRET": {
       "description": "Secret key for JWT tokens",
       "generator": "secret"
     },
-    "STRIPE_PUBLIC_KEY": {
-      "description": "Stripe Publishable Key (pk_test_... )",
+    "STRIPE_SECRET_KEY": {
+      "description": "Stripe Secret Key (sk_test_... or sk_live_...)",
       "required": false
     },
-    "STRIPE_SECRET_KEY": {
-      "description": "Stripe Secret Key (sk_test_...)",
+    "STRIPE_PUBLISHABLE_KEY": {
+      "description": "Stripe Publishable Key (pk_test_... or pk_live_...)",
       "required": false
     },
     "STRIPE_WEBHOOK_SECRET": {
       "description": "Stripe Webhook Secret (whsec_...)",
+      "required": false
+    },
+    "SENDGRID_API_KEY": {
+      "description": "SendGrid API Key for email notifications (Optional)",
+      "required": false
+    },
+    "EMAIL_FROM": {
+      "description": "Email sender address",
+      "value": "WorkoutBrothers <noreply@workoutbrothers.com>",
+      "required": false
+    },
+    "ADMIN_EMAIL": {
+      "description": "Admin email for receiving weekly reports",
       "required": false
     }
   },
@@ -31,5 +44,8 @@
     {
       "url": "heroku/nodejs"
     }
-  ]
+  ],
+  "scripts": {
+    "postdeploy": "npm run seed"
+  }
 }

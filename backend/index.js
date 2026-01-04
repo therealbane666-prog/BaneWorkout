@@ -641,6 +641,15 @@ app.post('/api/orders', authenticateToken, async (req, res) => {
     cart.updatedAt = Date.now();
     await cart.save();
 
+    // Send order confirmation email
+    try {
+      const { sendOrderConfirmation } = require('./email-service');
+      const user = { username: req.user.username, email: req.user.email };
+      await sendOrderConfirmation(order, user);
+    } catch (emailError) {
+      console.warn('⚠️  Failed to send order confirmation email:', emailError.message);
+    }
+
     res.status(201).json({
       message: 'Order created successfully',
       order,
@@ -838,6 +847,79 @@ app.get('/api/categories', async (req, res) => {
 });
 
 // ============================================================================
+// ADMIN & STATISTICS ROUTES
+// ============================================================================
+
+// Get business statistics (admin)
+app.get('/api/admin/stats', authenticateToken, async (req, res) => {
+  try {
+    const { period = 'week' } = req.query;
+    
+    let startDate;
+    const now = new Date();
+    
+    switch (period) {
+      case 'day':
+        startDate = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+        break;
+      case 'week':
+        startDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+        break;
+      case 'month':
+        startDate = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+        break;
+      default:
+        startDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+    }
+
+    const orders = await Order.find({
+      createdAt: { $gte: startDate, $lte: now },
+    });
+
+    const totalRevenue = orders.reduce((sum, order) => sum + order.totalAmount, 0);
+    const totalOrders = orders.length;
+
+    const newUsers = await User.countDocuments({
+      createdAt: { $gte: startDate, $lte: now },
+    });
+
+    const productCount = await Product.countDocuments();
+    const lowStockCount = await Product.countDocuments({ stock: { $lt: 10 } });
+
+    res.json({
+      period,
+      startDate,
+      endDate: now,
+      totalRevenue: totalRevenue.toFixed(2),
+      totalOrders,
+      newUsers,
+      averageOrderValue: totalOrders > 0 ? (totalRevenue / totalOrders).toFixed(2) : 0,
+      productCount,
+      lowStockCount,
+    });
+  } catch (error) {
+    console.error('Get stats error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Generate and send weekly report manually (admin)
+app.post('/api/admin/send-report', authenticateToken, async (req, res) => {
+  try {
+    const { generateWeeklyStats } = require('./scheduled-jobs');
+    const { sendWeeklyReport } = require('./email-service');
+    
+    const stats = await generateWeeklyStats(Order, Product, User);
+    await sendWeeklyReport(stats);
+    
+    res.json({ message: 'Weekly report sent successfully', stats });
+  } catch (error) {
+    console.error('Send report error:', error);
+    res.status(500).json({ error: 'Failed to send report' });
+  }
+});
+
+// ============================================================================
 // ERROR HANDLING
 // ============================================================================
 
@@ -860,6 +942,14 @@ const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
   console.log(`WorkoutBrothers API server running on port ${PORT}`);
   console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
+  
+  // Initialize scheduled jobs (weekly reports, stock monitoring)
+  try {
+    const { initializeJobs } = require('./scheduled-jobs');
+    initializeJobs({ Order, Product, User });
+  } catch (error) {
+    console.warn('⚠️  Scheduled jobs not initialized:', error.message);
+  }
 });
 
 module.exports = app;

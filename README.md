@@ -8,7 +8,7 @@
 
 ## 📋 À propos
 
-**BaneWorkout** (WorkoutBrothers) est une plateforme fitness complète combinant :
+**WorkoutBrothers** est une plateforme e-commerce complète dédiée à la préparation physique et mentale combinant :
 - 🛒 **E-commerce** : Boutique en ligne avec système de paiement Stripe
 - 🏋️ **Générateur d'entraînements** : Programmes personnalisés selon vos objectifs
 - 👤 **Gestion utilisateurs** : Authentification JWT, profils, historique
