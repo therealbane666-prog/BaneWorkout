@@ -4,8 +4,12 @@
   "repository": "https://github.com/therealbane666-prog/BaneWorkout",
   "keywords": ["node", "express", "mongodb", "ecommerce", "stripe", "fitness", "tactical", "nutrition"],
   "success_url": "/api/health",
-  "addons": ["mongolab:sandbox"],
+  "addons": [],
   "env": {
+    "MONGODB_URI": {
+      "description": "MongoDB connection string (get free 512MB at https://www.mongodb.com/cloud/atlas/register)",
+      "required": false
+    },
     "NODE_ENV": {
       "description": "Node environment",
       "value": "production"
