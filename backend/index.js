@@ -8,6 +8,9 @@ const stripe = require('stripe');
 const mongoose = require('mongoose');
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
+const { sendOrderConfirmation } = require('./email-service');
+const { generateWeeklyStats } = require('./scheduled-jobs');
+const { sendWeeklyReport } = require('./email-service');
 
 // Load environment variables
 dotenv.config();
@@ -643,7 +646,6 @@ app.post('/api/orders', authenticateToken, async (req, res) => {
 
     // Send order confirmation email
     try {
-      const { sendOrderConfirmation } = require('./email-service');
       const user = { username: req.user.username, email: req.user.email };
       await sendOrderConfirmation(order, user);
     } catch (emailError) {
@@ -906,9 +908,6 @@ app.get('/api/admin/stats', authenticateToken, async (req, res) => {
 // Generate and send weekly report manually (admin)
 app.post('/api/admin/send-report', authenticateToken, async (req, res) => {
   try {
-    const { generateWeeklyStats } = require('./scheduled-jobs');
-    const { sendWeeklyReport } = require('./email-service');
-    
     const stats = await generateWeeklyStats(Order, Product, User);
     await sendWeeklyReport(stats);
     

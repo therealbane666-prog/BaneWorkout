@@ -18,7 +18,7 @@ const createTransporter = () => {
     });
   } else if (process.env.MAILGUN_API_KEY) {
     // Mailgun configuration
-    return nodemailer.createTransporter({
+    return nodemailer.createTransport({
       host: process.env.MAILGUN_SMTP_HOST || 'smtp.mailgun.org',
       port: 587,
       auth: {
@@ -28,7 +28,7 @@ const createTransporter = () => {
     });
   } else if (process.env.SMTP_HOST) {
     // Generic SMTP configuration
-    return nodemailer.createTransporter({
+    return nodemailer.createTransport({
       host: process.env.SMTP_HOST,
       port: process.env.SMTP_PORT || 587,
       secure: process.env.SMTP_SECURE === 'true',
