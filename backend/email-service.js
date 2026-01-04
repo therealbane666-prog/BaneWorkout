@@ -53,12 +53,24 @@ async function sendEmail({ to, subject, html, text }) {
   try {
     const transporter = createTransporter();
 
+    // Create text version if not provided
+    let textContent = text;
+    if (!textContent && html) {
+      // Remove HTML tags more safely
+      textContent = html
+        .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '') // Remove script tags
+        .replace(/<style\b[^<]*(?:(?!<\/style>)<[^<]*)*<\/style>/gi, '') // Remove style tags
+        .replace(/<[^>]+>/g, '') // Remove remaining HTML tags
+        .replace(/\s+/g, ' ') // Normalize whitespace
+        .trim();
+    }
+
     const mailOptions = {
       from: process.env.EMAIL_FROM || 'WorkoutBrothers <noreply@workoutbrothers.com>',
       to,
       subject,
       html,
-      text: text || html.replace(/<[^>]*>/g, ''), // Strip HTML for text version
+      text: textContent,
     };
 
     const info = await transporter.sendMail(mailOptions);

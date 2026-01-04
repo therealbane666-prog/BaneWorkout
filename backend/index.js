@@ -8,6 +8,7 @@ const stripe = require('stripe');
 const mongoose = require('mongoose');
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
+const rateLimit = require('express-rate-limit');
 const { sendOrderConfirmation } = require('./email-service');
 const { generateWeeklyStats } = require('./scheduled-jobs');
 const { sendWeeklyReport } = require('./email-service');
@@ -18,10 +19,32 @@ dotenv.config();
 // Initialize Express app
 const app = express();
 
+// Rate limiting configuration
+const apiLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 100, // Limit each IP to 100 requests per windowMs
+  message: 'Too many requests from this IP, please try again later.',
+});
+
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 5, // Limit each IP to 5 requests per windowMs
+  message: 'Too many authentication attempts, please try again later.',
+});
+
+const adminLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 10, // Limit each IP to 10 requests per windowMs
+  message: 'Too many admin requests, please try again later.',
+});
+
 // Middleware
 app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
+// Apply rate limiting to all API routes
+app.use('/api/', apiLimiter);
 
 // Initialize Stripe
 const stripeClient = stripe(process.env.STRIPE_SECRET_KEY);
@@ -140,7 +163,7 @@ const authenticateToken = (req, res, next) => {
 // ============================================================================
 
 // Register
-app.post('/api/auth/register', async (req, res) => {
+app.post('/api/auth/register', authLimiter, async (req, res) => {
   try {
     const { username, email, password } = req.body;
 
@@ -189,7 +212,7 @@ app.post('/api/auth/register', async (req, res) => {
 });
 
 // Login
-app.post('/api/auth/login', async (req, res) => {
+app.post('/api/auth/login', authLimiter, async (req, res) => {
   try {
     const { email, password } = req.body;
 
@@ -853,7 +876,7 @@ app.get('/api/categories', async (req, res) => {
 // ============================================================================
 
 // Get business statistics (admin)
-app.get('/api/admin/stats', authenticateToken, async (req, res) => {
+app.get('/api/admin/stats', adminLimiter, authenticateToken, async (req, res) => {
   try {
     const { period = 'week' } = req.query;
     
@@ -906,7 +929,7 @@ app.get('/api/admin/stats', authenticateToken, async (req, res) => {
 });
 
 // Generate and send weekly report manually (admin)
-app.post('/api/admin/send-report', authenticateToken, async (req, res) => {
+app.post('/api/admin/send-report', adminLimiter, authenticateToken, async (req, res) => {
   try {
     const stats = await generateWeeklyStats(Order, Product, User);
     await sendWeeklyReport(stats);
