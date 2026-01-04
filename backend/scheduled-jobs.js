@@ -125,7 +125,8 @@ class ScheduledJobs {
       // Check for products with stock below threshold (10 units)
       // Skip products with unlimited stock (stock >= 999)
       const lowStockProducts = await this.Product.find({
-        stock: { $lt: 10, $gt: 0, $lt: 999 }
+        stock: { $lt: 10, $gt: 0 },
+        $nor: [{ stock: { $gte: 999 } }]
       }).select('name stock category');
 
       if (lowStockProducts.length > 0) {

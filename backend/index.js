@@ -963,7 +963,8 @@ app.get('/api/admin/stats', authenticateToken, adminLimiter, async (req, res) =>
 
     // Low stock products
     const lowStockProducts = await Product.find({
-      stock: { $lt: 10, $gt: 0, $lt: 999 }
+      stock: { $lt: 10, $gt: 0 },
+      $nor: [{ stock: { $gte: 999 } }]
     }).select('name stock category').limit(10);
 
     // Recent orders
