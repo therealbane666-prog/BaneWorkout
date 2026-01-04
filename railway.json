@@ -1,4 +1,4 @@
 {
   "buildCommand": "npm install",
-  "startCommand": "npm start"
+  "startCommand": "node backend/index.js"
 }

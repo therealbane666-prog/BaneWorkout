@@ -2,11 +2,11 @@
   "name": "WorkoutBrothers",
   "version": "1.0.0",
   "description": "WorkoutBrothers - Your fitness companion for customers and suppliers",
-  "main": "index.js",
+  "main": "backend/index.js",
   "scripts": {
-    "start": "node index.js",
+    "start": "node backend/index.js",
     "test": "jest",
-    "dev": "nodemon index.js"
+    "dev": "nodemon backend/index.js"
   },
   "keywords": [
     "fitness",
@@ -18,7 +18,12 @@
   "license": "ISC",
   "dependencies": {
     "express": "^4.18.2",
-    "mongoose": "^7.0.0"
+    "mongoose": "^7.0.0",
+    "cors": "^2.8.5",
+    "dotenv": "^16.0.3",
+    "stripe": "^12.0.0",
+    "jsonwebtoken": "^9.0.0",
+    "bcryptjs": "^2.4.3"
   },
   "devDependencies": {
     "nodemon": "^2.0.20",
