@@ -1,5 +1,12 @@
 // WorkoutBrothers - Product Seeding Script
 // Seeds the database with tactical gear, nutrition supplements, and sports equipment
+// 
+// BUSINESS MODEL: Dropshipping / Print-on-Demand / White Label
+// - Textile: POD via Printful (stock illimité = 9999)
+// - Nutrition: White label Bulk Powders (stock géré manuellement)
+// - Équipement: Dropshipping CJDropshipping (stock illimité = 9999)
+// 
+// Tous les produits portent la marque WorkoutBrothers avec logo personnage masqué + haltères
 
 const mongoose = require('mongoose');
 const dotenv = require('dotenv');

@@ -30,9 +30,8 @@ Créer une application web moderne et responsive pour la boutique WorkoutBrother
   - Icons tactiques/minimalistes
 
 ### Inspirations
-- Shopify store existant: baneworkout.fr
 - Style: 5.11 Tactical, Rogue Fitness, Crossfit
-- Logo: Personnage masqué (inspiration du visuel existant)
+- Logo: Personnage masqué avec haltères (visuel WorkoutBrothers)
 
 ---
 
