@@ -1,24 +1,35 @@
 {
   "name": "WorkoutBrothers",
   "version": "1.0.0",
-  "description": "WorkoutBrothers - Your fitness companion for customers and suppliers",
-  "main": "index.js",
+  "description": "WorkoutBrothers - Préparation Physique & Mentale - E-Commerce Platform",
+  "main": "backend/index.js",
   "scripts": {
-    "start": "node index.js",
+    "start": "node backend/index.js",
     "test": "jest",
-    "dev": "nodemon index.js"
+    "dev": "nodemon backend/index.js"
   },
   "keywords": [
     "fitness",
     "workout",
     "WorkoutBrothers",
-    "training"
+    "training",
+    "ecommerce",
+    "tactical"
   ],
-  "author": "",
+  "author": "WorkoutBrothers",
   "license": "ISC",
   "dependencies": {
     "express": "^4.18.2",
-    "mongoose": "^7.0.0"
+    "mongoose": "^7.0.0",
+    "cors": "^2.8.5",
+    "dotenv": "^16.0.3",
+    "stripe": "^12.0.0",
+    "jsonwebtoken": "^9.0.0",
+    "bcryptjs": "^2.4.3",
+    "express-rate-limit": "^6.7.0",
+    "helmet": "^7.0.0",
+    "node-cron": "^3.0.2",
+    "nodemailer": "^6.9.1"
   },
   "devDependencies": {
     "nodemon": "^2.0.20",

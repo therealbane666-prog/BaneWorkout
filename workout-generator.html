@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>BaneWorkout - Fitness Program Generator</title>
+    <title>WorkoutBrothers - Préparation Physique & Mentale</title>
     <style>
         * {
             margin: 0;
@@ -358,8 +358,8 @@
 <body>
     <div class="container">
         <header>
-            <h1>💪 BaneWorkout</h1>
-            <p>Your Personal Fitness Program Generator</p>
+            <h1>💪 WorkoutBrothers</h1>
+            <p>Préparation Physique & Mentale</p>
         </header>
 
         <div class="main-grid">
@@ -903,7 +903,7 @@
             const selectedDays = Array.from(document.querySelectorAll('input[name="days"]:checked'))
                 .map(cb => cb.value);
 
-            let text = 'BANE WORKOUT PROGRAM\n';
+            let text = 'WORKOUTBROTHERS PROGRAM\n';
             text += '====================\n\n';
             text += `Weight: ${weight} lbs\n`;
             text += `Goal: ${goal.replace('-', ' ').toUpperCase()}\n`;
@@ -943,7 +943,7 @@
             const selectedDays = Array.from(document.querySelectorAll('input[name="days"]:checked'))
                 .map(cb => cb.value);
 
-            let content = 'BANE WORKOUT PROGRAM\n';
+            let content = 'WORKOUTBROTHERS PROGRAM\n';
             content += '====================\n\n';
             content += `Weight: ${weight} lbs\n`;
             content += `Goal: ${goal.replace('-', ' ').toUpperCase()}\n`;
@@ -974,7 +974,7 @@
             const url = window.URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;
-            a.download = `bane-workout-${new Date().toISOString().split('T')[0]}.txt`;
+            a.download = `workoutbrothers-${new Date().toISOString().split('T')[0]}.txt`;
             document.body.appendChild(a);
             a.click();
             window.URL.revokeObjectURL(url);

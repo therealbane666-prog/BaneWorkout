@@ -1,18 +1,26 @@
 {
   "name": "WorkoutBrothers",
-  "description": "WorkoutBrothers - E-Commerce Platform for Fitness",
-  "repository": "https://github.com/therealbane666-prog/BaneWorkout",
-  "keywords": ["node", "express", "mongodb", "ecommerce", "stripe", "fitness"],
+  "description": "WorkoutBrothers - E-Commerce Platform for Fitness - Préparation Physique & Mentale",
+  "repository": "https://github.com/therealbane666-prog/WorkoutBrothers",
+  "keywords": ["node", "express", "mongodb", "ecommerce", "stripe", "fitness", "workoutbrothers"],
   "success_url": "/api/health",
-  "addons": ["mongolab: sandbox"],
   "env": {
     "NODE_ENV": {
       "description": "Node environment",
       "value": "production"
     },
+    "MONGODB_URI": {
+      "description": "MongoDB connection string (e.g., from MongoDB Atlas)",
+      "required": true
+    },
     "JWT_SECRET":  {
       "description": "Secret key for JWT tokens",
       "generator": "secret"
+    },
+    "DOMAIN": {
+      "description": "Custom domain for the application",
+      "value": "baneworkout.com",
+      "required": false
     },
     "STRIPE_PUBLIC_KEY": {
       "description": "Stripe Publishable Key (pk_test_... )",
@@ -24,6 +32,22 @@
     },
     "STRIPE_WEBHOOK_SECRET": {
       "description": "Stripe Webhook Secret (whsec_...)",
+      "required": false
+    },
+    "EMAIL_SERVICE": {
+      "description": "Email service provider (optional)",
+      "required": false
+    },
+    "EMAIL_USER": {
+      "description": "Email user for notifications (optional)",
+      "required": false
+    },
+    "EMAIL_PASSWORD": {
+      "description": "Email password for notifications (optional)",
+      "required": false
+    },
+    "OPENAI_API_KEY": {
+      "description": "OpenAI API key for AI agent (optional)",
       "required": false
     }
   },
