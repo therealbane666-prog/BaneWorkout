@@ -1,9 +1,11 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="fr">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>BaneWorkout - Fitness Program Generator</title>
+    <title>BaneWorkout - Générateur de Programmes d'Entraînement</title>
+    <!-- PayPal SDK -->
+    <script src="https://www.paypal.com/sdk/js?client-id=YOUR_PAYPAL_CLIENT_ID&currency=EUR"></script>
     <style>
         * {
             margin: 0;
@@ -353,119 +355,362 @@
                 opacity: 1;
             }
         }
+
+        /* PayPal Payment Section Styles */
+        .payment-section {
+            background: white;
+            border-radius: 10px;
+            padding: 40px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            text-align: center;
+            max-width: 600px;
+            margin: 0 auto 30px;
+        }
+
+        .payment-section h2 {
+            color: #667eea;
+            margin-bottom: 20px;
+            font-size: 1.8em;
+        }
+
+        .payment-section .price {
+            font-size: 3em;
+            font-weight: bold;
+            color: #764ba2;
+            margin: 20px 0;
+        }
+
+        .payment-section .price-description {
+            color: #666;
+            font-size: 1.1em;
+            margin-bottom: 30px;
+            line-height: 1.6;
+        }
+
+        .payment-section ul {
+            text-align: left;
+            list-style: none;
+            margin: 20px 0;
+            padding: 0;
+        }
+
+        .payment-section ul li {
+            padding: 10px 0;
+            color: #333;
+            font-size: 1.05em;
+        }
+
+        .payment-section ul li:before {
+            content: "✓ ";
+            color: #4caf50;
+            font-weight: bold;
+            margin-right: 10px;
+        }
+
+        #paypal-button-container {
+            margin: 30px auto;
+            max-width: 400px;
+        }
+
+        .payment-locked {
+            opacity: 0.5;
+            pointer-events: none;
+            position: relative;
+        }
+
+        .payment-locked:after {
+            content: "🔒 Paiement requis pour débloquer";
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(255, 255, 255, 0.95);
+            padding: 20px 40px;
+            border-radius: 10px;
+            font-weight: bold;
+            color: #764ba2;
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.3);
+            font-size: 1.2em;
+        }
+
+        .payment-success {
+            background: linear-gradient(135deg, #4caf50 0%, #45a049 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            text-align: center;
+            font-size: 1.2em;
+            animation: slideIn 0.5s ease;
+        }
+
+        .payment-success .check-icon {
+            font-size: 2em;
+            margin-bottom: 10px;
+        }
+
+        /* Footer Styles */
+        footer {
+            background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
+            color: white;
+            padding: 40px 20px 20px;
+            margin-top: 60px;
+            text-align: center;
+        }
+
+        footer .footer-content {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        footer .footer-main {
+            font-size: 1.1em;
+            line-height: 1.8;
+            margin-bottom: 20px;
+        }
+
+        footer .footer-main strong {
+            color: #667eea;
+            font-size: 1.2em;
+        }
+
+        footer .footer-warning {
+            background: rgba(255, 107, 53, 0.1);
+            border: 2px solid #ff6b35;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 20px 0;
+            font-size: 0.95em;
+            line-height: 1.6;
+        }
+
+        footer .footer-links {
+            display: flex;
+            justify-content: center;
+            gap: 30px;
+            margin: 25px 0;
+            flex-wrap: wrap;
+        }
+
+        footer .footer-links a {
+            color: #667eea;
+            text-decoration: none;
+            font-size: 1.1em;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        footer .footer-links a:hover {
+            color: #8a9ef7;
+            transform: translateY(-2px);
+        }
+
+        footer .footer-bottom {
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            font-size: 0.9em;
+            color: #999;
+        }
+
+        .loading-spinner {
+            display: none;
+            text-align: center;
+            padding: 40px;
+        }
+
+        .loading-spinner.active {
+            display: block;
+        }
+
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        /* Legal page styles */
+        .legal-content {
+            background: white;
+            border-radius: 10px;
+            padding: 40px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            max-width: 900px;
+            margin: 0 auto;
+        }
+
+        .legal-content h2 {
+            color: #667eea;
+            margin: 30px 0 15px;
+            font-size: 1.5em;
+        }
+
+        .legal-content h3 {
+            color: #764ba2;
+            margin: 20px 0 10px;
+            font-size: 1.2em;
+        }
+
+        .legal-content p, .legal-content li {
+            line-height: 1.8;
+            color: #333;
+            margin-bottom: 10px;
+        }
     </style>
 </head>
 <body>
     <div class="container">
         <header>
             <h1>💪 BaneWorkout</h1>
-            <p>Your Personal Fitness Program Generator</p>
+            <p>Votre générateur de programme d'entraînement personnalisé</p>
         </header>
 
-        <div class="main-grid">
+        <!-- PayPal Payment Section -->
+        <div id="paymentSection" class="payment-section">
+            <h2>🔒 Débloquez Votre Programme Personnalisé</h2>
+            <div class="price">9,90€</div>
+            <p class="price-description">
+                Obtenez un accès immédiat à votre programme d'entraînement sur mesure, 
+                conçu spécifiquement pour vos objectifs et votre niveau.
+            </p>
+            <ul>
+                <li>Programme 100% personnalisé selon vos objectifs</li>
+                <li>Adapté à votre niveau (débutant à avancé)</li>
+                <li>Répartition intelligente sur vos jours disponibles</li>
+                <li>Exercices détaillés avec séries, répétitions et temps de repos</li>
+                <li>Téléchargement et copie instantanés</li>
+                <li>Accès immédiat après paiement</li>
+            </ul>
+            <div id="paypal-button-container"></div>
+            <p style="color: #666; font-size: 0.9em; margin-top: 20px;">
+                💳 Paiement sécurisé par PayPal • Mode Sandbox activé pour les tests
+            </p>
+        </div>
+
+        <div id="mainContent" class="payment-locked">
+            <div class="main-grid">
             <!-- Input Form -->
             <div class="card">
-                <h2>Program Configuration</h2>
+                <h2>Configuration du Programme</h2>
                 
                 <div class="error" id="errorMessage"></div>
                 <div class="success" id="successMessage"></div>
 
                 <form id="workoutForm">
                     <div class="form-group">
-                        <label for="weight">Body Weight (lbs)</label>
-                        <input type="number" id="weight" name="weight" min="50" max="500" step="0.5" placeholder="e.g., 180" required>
+                        <label for="weight">Poids du Corps (lbs)</label>
+                        <input type="number" id="weight" name="weight" min="50" max="500" step="0.5" placeholder="ex: 180" required>
                     </div>
 
                     <div class="form-group">
-                        <label for="goal">Primary Goal</label>
+                        <label for="goal">Objectif Principal</label>
                         <select id="goal" name="goal" required>
-                            <option value="">Select a goal...</option>
-                            <option value="strength">Strength & Power</option>
-                            <option value="muscle">Muscle Building (Hypertrophy)</option>
+                            <option value="">Sélectionnez un objectif...</option>
+                            <option value="strength">Force & Puissance</option>
+                            <option value="muscle">Prise de Masse (Hypertrophie)</option>
                             <option value="endurance">Endurance & Stamina</option>
-                            <option value="weight-loss">Weight Loss & Toning</option>
-                            <option value="balanced">Balanced Fitness</option>
+                            <option value="weight-loss">Perte de Poids & Tonification</option>
+                            <option value="balanced">Fitness Équilibré</option>
                         </select>
                     </div>
 
                     <div class="form-group">
-                        <label for="experience">Experience Level</label>
+                        <label for="experience">Niveau d'Expérience</label>
                         <select id="experience" name="experience" required>
-                            <option value="">Select level...</option>
-                            <option value="beginner">Beginner (0-6 months)</option>
-                            <option value="intermediate">Intermediate (6-2 years)</option>
-                            <option value="advanced">Advanced (2+ years)</option>
+                            <option value="">Sélectionnez votre niveau...</option>
+                            <option value="beginner">Débutant (0-6 mois)</option>
+                            <option value="intermediate">Intermédiaire (6 mois-2 ans)</option>
+                            <option value="advanced">Avancé (2+ ans)</option>
                         </select>
                     </div>
 
                     <div class="form-group">
-                        <label>Available Training Days</label>
+                        <label>Jours d'Entraînement Disponibles</label>
                         <div class="checkbox-group">
                             <div class="checkbox-item">
-                                <input type="checkbox" id="mon" name="days" value="Monday">
-                                <label for="mon">Monday</label>
+                                <input type="checkbox" id="mon" name="days" value="Lundi">
+                                <label for="mon">Lundi</label>
                             </div>
                             <div class="checkbox-item">
-                                <input type="checkbox" id="tue" name="days" value="Tuesday">
-                                <label for="tue">Tuesday</label>
+                                <input type="checkbox" id="tue" name="days" value="Mardi">
+                                <label for="tue">Mardi</label>
                             </div>
                             <div class="checkbox-item">
-                                <input type="checkbox" id="wed" name="days" value="Wednesday">
-                                <label for="wed">Wednesday</label>
+                                <input type="checkbox" id="wed" name="days" value="Mercredi">
+                                <label for="wed">Mercredi</label>
                             </div>
                             <div class="checkbox-item">
-                                <input type="checkbox" id="thu" name="days" value="Thursday">
-                                <label for="thu">Thursday</label>
+                                <input type="checkbox" id="thu" name="days" value="Jeudi">
+                                <label for="thu">Jeudi</label>
                             </div>
                             <div class="checkbox-item">
-                                <input type="checkbox" id="fri" name="days" value="Friday">
-                                <label for="fri">Friday</label>
+                                <input type="checkbox" id="fri" name="days" value="Vendredi">
+                                <label for="fri">Vendredi</label>
                             </div>
                             <div class="checkbox-item">
-                                <input type="checkbox" id="sat" name="days" value="Saturday">
-                                <label for="sat">Saturday</label>
+                                <input type="checkbox" id="sat" name="days" value="Samedi">
+                                <label for="sat">Samedi</label>
                             </div>
                             <div class="checkbox-item">
-                                <input type="checkbox" id="sun" name="days" value="Sunday">
-                                <label for="sun">Sunday</label>
+                                <input type="checkbox" id="sun" name="days" value="Dimanche">
+                                <label for="sun">Dimanche</label>
                             </div>
                         </div>
                     </div>
 
                     <div class="form-group">
-                        <label for="sessionDuration">Session Duration (minutes)</label>
+                        <label for="sessionDuration">Durée de Séance (minutes)</label>
                         <input type="number" id="sessionDuration" name="sessionDuration" min="20" max="180" step="5" value="60" required>
                     </div>
 
                     <div class="button-group">
-                        <button type="submit" class="btn-generate">Generate Program</button>
-                        <button type="reset" class="btn-reset">Reset Form</button>
+                        <button type="submit" class="btn-generate">Générer le Programme</button>
+                        <button type="reset" class="btn-reset">Réinitialiser</button>
                     </div>
                 </form>
             </div>
 
             <!-- Program Overview -->
             <div class="card">
-                <h2>Program Summary</h2>
+                <h2>Résumé du Programme</h2>
                 <div id="programInfo" style="color: #999; text-align: center; padding: 40px 0;">
-                    <p>Fill out the configuration form and click "Generate Program" to create your customized fitness plan.</p>
+                    <p>Remplissez le formulaire de configuration et cliquez sur "Générer le Programme" pour créer votre plan d'entraînement personnalisé.</p>
+                </div>
+                <div class="loading-spinner" id="loadingSpinner">
+                    <div class="spinner"></div>
+                    <p>Génération de votre programme en cours...</p>
                 </div>
                 <div class="summary-stats" id="summaryStats" style="display: none;">
                     <div class="stat-box">
                         <div class="value" id="totalDays">0</div>
-                        <div class="label">Training Days</div>
+                        <div class="label">Jours d'Entraînement</div>
                     </div>
                     <div class="stat-box">
                         <div class="value" id="totalExercises">0</div>
-                        <div class="label">Total Exercises</div>
+                        <div class="label">Exercices Total</div>
                     </div>
                     <div class="stat-box">
                         <div class="value" id="totalVolume">0</div>
-                        <div class="label">Total Sets</div>
+                        <div class="label">Séries Totales</div>
                     </div>
                     <div class="stat-box">
                         <div class="value" id="weeklyHours">0</div>
-                        <div class="label">Weekly Hours</div>
+                        <div class="label">Heures Hebdomadaires</div>
                     </div>
                 </div>
             </div>
@@ -474,260 +719,486 @@
         <!-- Results Section -->
         <div class="results-container" id="resultsContainer">
             <div class="card">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-                    <h2 style="margin: 0;">Your Customized Workout Program</h2>
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 15px;">
+                    <h2 style="margin: 0;">Votre Programme d'Entraînement Personnalisé</h2>
                     <div class="button-group" style="margin: 0; flex: 0;">
-                        <button class="btn-copy" onclick="copyToClipboard()">📋 Copy</button>
-                        <button class="btn-download" onclick="downloadProgram()">⬇️ Download</button>
+                        <button class="btn-copy" onclick="copyToClipboard()">📋 Copier</button>
+                        <button class="btn-download" onclick="downloadProgram()">⬇️ Télécharger</button>
                     </div>
                 </div>
                 
                 <div class="workout-schedule" id="workoutSchedule"></div>
             </div>
         </div>
+        </div>
     </div>
 
-    <div class="copy-feedback" id="copyFeedback">✓ Program copied to clipboard!</div>
+    <div class="copy-feedback" id="copyFeedback">✓ Programme copié dans le presse-papier !</div>
+
+    <!-- Footer -->
+    <footer>
+        <div class="footer-content">
+            <div class="footer-main">
+                <strong>Application créée et développée par Bastien Verdu</strong><br>
+                Édition workout-brothers
+            </div>
+            
+            <div class="footer-warning">
+                ⚖️ <strong>Propriété intellectuelle exclusive</strong><br>
+                Toute copie, reproduction ou utilisation non autorisée de cette application 
+                fera l'objet de poursuites judiciaires conformément aux lois sur la propriété intellectuelle.
+            </div>
+            
+            <div class="footer-links">
+                <a href="https://instagram.com/workoutbrothers" target="_blank" rel="noopener">
+                    📱 Instagram @workoutbrothers
+                </a>
+                <a href="#" onclick="showLegalPage(); return false;">
+                    📄 Mentions Légales
+                </a>
+                <a href="mailto:therealbane666@gmail.com">
+                    ✉️ Contact
+                </a>
+            </div>
+            
+            <div class="footer-bottom">
+                © 2024 BaneWorkout - Tous droits réservés • Bastien Verdu - Édition workout-brothers
+            </div>
+        </div>
+    </footer>
 
     <script>
-        // Workout database
+        // PayPal Configuration
+        const PAYPAL_PRICE = '9.90'; // Prix facilement modifiable
+        let paymentCompleted = false;
+
+        // Initialize PayPal Buttons
+        if (window.paypal) {
+            paypal.Buttons({
+                style: {
+                    layout: 'vertical',
+                    color: 'blue',
+                    shape: 'rect',
+                    label: 'paypal'
+                },
+                createOrder: function(data, actions) {
+                    return actions.order.create({
+                        purchase_units: [{
+                            description: 'Programme d\'entraînement personnalisé BaneWorkout',
+                            amount: {
+                                currency_code: 'EUR',
+                                value: PAYPAL_PRICE
+                            }
+                        }]
+                    });
+                },
+                onApprove: function(data, actions) {
+                    return actions.order.capture().then(function(details) {
+                        // Paiement réussi
+                        paymentCompleted = true;
+                        
+                        // Masquer la section de paiement
+                        document.getElementById('paymentSection').style.display = 'none';
+                        
+                        // Débloquer le contenu
+                        const mainContent = document.getElementById('mainContent');
+                        mainContent.classList.remove('payment-locked');
+                        
+                        // Afficher message de succès
+                        const successDiv = document.createElement('div');
+                        successDiv.className = 'payment-success';
+                        successDiv.innerHTML = `
+                            <div class="check-icon">✓</div>
+                            <div>Paiement validé avec succès !</div>
+                            <div style="font-size: 0.9em; margin-top: 10px;">
+                                Merci ${details.payer.name.given_name}. Vous pouvez maintenant générer votre programme personnalisé.
+                            </div>
+                        `;
+                        mainContent.insertBefore(successDiv, mainContent.firstChild);
+                        
+                        // Stocker l'état de paiement (pour cette session)
+                        sessionStorage.setItem('baneWorkoutPaid', 'true');
+                        sessionStorage.setItem('payerName', details.payer.name.given_name);
+                        
+                        // Scroll vers le formulaire
+                        mainContent.scrollIntoView({ behavior: 'smooth' });
+                    });
+                },
+                onError: function(err) {
+                    console.error('Erreur PayPal:', err);
+                    alert('Une erreur est survenue lors du paiement. Veuillez réessayer.');
+                }
+            }).render('#paypal-button-container');
+        }
+
+        // Vérifier si le paiement a déjà été effectué (session)
+        window.addEventListener('DOMContentLoaded', function() {
+            if (sessionStorage.getItem('baneWorkoutPaid') === 'true') {
+                paymentCompleted = true;
+                document.getElementById('paymentSection').style.display = 'none';
+                const mainContent = document.getElementById('mainContent');
+                mainContent.classList.remove('payment-locked');
+                
+                const payerName = sessionStorage.getItem('payerName') || 'utilisateur';
+                const successDiv = document.createElement('div');
+                successDiv.className = 'payment-success';
+                successDiv.innerHTML = `
+                    <div class="check-icon">✓</div>
+                    <div>Accès débloqué - Paiement validé</div>
+                    <div style="font-size: 0.9em; margin-top: 10px;">
+                        Bienvenue ${payerName} !
+                    </div>
+                `;
+                mainContent.insertBefore(successDiv, mainContent.firstChild);
+            }
+        });
+
+        // Fonction pour afficher la page légale
+        function showLegalPage() {
+            const container = document.querySelector('.container');
+            const footer = document.querySelector('footer');
+            
+            container.innerHTML = `
+                <header>
+                    <h1>💪 BaneWorkout</h1>
+                    <p>Mentions Légales</p>
+                </header>
+                
+                <div class="legal-content">
+                    <h2>📋 Mentions Légales</h2>
+                    
+                    <h3>Éditeur de l'application</h3>
+                    <p>
+                        <strong>Bastien Verdu</strong><br>
+                        Édition workout-brothers<br>
+                        Email : therealbane666@gmail.com
+                    </p>
+                    
+                    <h3>Propriété intellectuelle</h3>
+                    <p>
+                        L'ensemble du contenu de cette application (structure, textes, graphismes, logos, 
+                        algorithmes, programmes) est la propriété exclusive de Bastien Verdu.
+                    </p>
+                    <p>
+                        Toute reproduction, représentation, modification, publication, transmission, 
+                        dénaturation, totale ou partielle de l'application ou de son contenu, par quelque 
+                        procédé que ce soit, et sur quelque support que ce soit, est interdite sans 
+                        l'autorisation écrite préalable de l'éditeur.
+                    </p>
+                    <p>
+                        Toute exploitation non autorisée de l'application, de son contenu ou de tout élément 
+                        qui y est contenu sera considérée comme constitutive d'une contrefaçon et poursuivie 
+                        conformément aux dispositions des articles L.335-2 et suivants du Code de Propriété 
+                        Intellectuelle.
+                    </p>
+                    
+                    <h3>Hébergement</h3>
+                    <p>
+                        Cette application peut être hébergée sur différentes plateformes (GitHub Pages, 
+                        Vercel, Netlify) selon la configuration du déploiement.
+                    </p>
+                    
+                    <h3>Données personnelles</h3>
+                    <p>
+                        Cette application ne collecte aucune donnée personnelle. Les informations saisies 
+                        dans le formulaire sont uniquement utilisées localement dans votre navigateur pour 
+                        générer votre programme d'entraînement et ne sont jamais transmises à un serveur.
+                    </p>
+                    <p>
+                        Les paiements sont traités de manière sécurisée par PayPal. Nous ne stockons aucune 
+                        information de paiement.
+                    </p>
+                    
+                    <h3>Cookies</h3>
+                    <p>
+                        Cette application utilise uniquement le stockage de session local (sessionStorage) 
+                        pour mémoriser l'état de votre paiement pendant votre visite. Aucune information 
+                        n'est conservée après la fermeture de votre navigateur.
+                    </p>
+                    
+                    <h3>Limitation de responsabilité</h3>
+                    <p>
+                        Les programmes d'entraînement générés sont fournis à titre indicatif. Il est 
+                        recommandé de consulter un professionnel de santé avant de commencer tout nouveau 
+                        programme d'exercice physique.
+                    </p>
+                    <p>
+                        L'éditeur ne saurait être tenu responsable des dommages directs ou indirects qui 
+                        pourraient résulter de l'utilisation des programmes générés par cette application.
+                    </p>
+                    
+                    <h3>Mode Sandbox PayPal</h3>
+                    <p>
+                        <strong>⚠️ IMPORTANT POUR LES DÉVELOPPEURS :</strong> Cette application est 
+                        actuellement configurée en mode SANDBOX (test) PayPal.
+                    </p>
+                    <p>
+                        Pour passer en mode PRODUCTION et accepter de vrais paiements :
+                    </p>
+                    <ol>
+                        <li>Créez un compte professionnel PayPal Business</li>
+                        <li>Obtenez vos identifiants Client ID de production</li>
+                        <li>Dans le fichier HTML, remplacez dans la balise script PayPal :<br>
+                            <code>client-id=YOUR_PAYPAL_CLIENT_ID</code><br>
+                            par votre vrai Client ID de production</li>
+                        <li>Supprimez ou modifiez le message "Mode Sandbox" dans l'interface</li>
+                    </ol>
+                    
+                    <h3>Contact</h3>
+                    <p>
+                        Pour toute question concernant ces mentions légales, vous pouvez nous contacter à :<br>
+                        <strong>therealbane666@gmail.com</strong>
+                    </p>
+                    
+                    <div style="margin-top: 40px; text-align: center;">
+                        <button onclick="window.location.reload()" class="btn-generate">
+                            ← Retour à l'application
+                        </button>
+                    </div>
+                </div>
+            `;
+            
+            window.scrollTo(0, 0);
+        }
+
+        // Workout database (traduction en français des notes)
         const workoutDatabase = {
             strength: {
                 beginner: {
                     upper: [
-                        { name: 'Bench Press', sets: 3, reps: '5-6', rest: '3 min', notes: 'Main strength focus' },
-                        { name: 'Bent Over Rows', sets: 3, reps: '5-6', rest: '3 min', notes: 'Balance pushing with pulling' },
-                        { name: 'Overhead Press', sets: 3, reps: '5-6', rest: '2.5 min', notes: '' },
-                        { name: 'Pull-ups/Assisted', sets: 3, reps: '6-8', rest: '2 min', notes: '' },
-                        { name: 'Barbell Curls', sets: 2, reps: '6-8', rest: '90 sec', notes: '' }
+                        { name: 'Développé Couché', sets: 3, reps: '5-6', rest: '3 min', notes: 'Focus force principal' },
+                        { name: 'Rowing Barre', sets: 3, reps: '5-6', rest: '3 min', notes: 'Équilibrer poussée/tirage' },
+                        { name: 'Développé Militaire', sets: 3, reps: '5-6', rest: '2.5 min', notes: '' },
+                        { name: 'Tractions/Assistées', sets: 3, reps: '6-8', rest: '2 min', notes: '' },
+                        { name: 'Curl Barre', sets: 2, reps: '6-8', rest: '90 sec', notes: '' }
                     ],
                     lower: [
-                        { name: 'Squat', sets: 3, reps: '5-6', rest: '3 min', notes: 'Main strength focus' },
-                        { name: 'Deadlift', sets: 2, reps: '3-5', rest: '3 min', notes: 'Heavy compound' },
-                        { name: 'Leg Press', sets: 3, reps: '6-8', rest: '2 min', notes: '' },
-                        { name: 'Leg Curls', sets: 3, reps: '8-10', rest: '90 sec', notes: '' },
-                        { name: 'Calf Raises', sets: 3, reps: '10-12', rest: '60 sec', notes: '' }
+                        { name: 'Squat', sets: 3, reps: '5-6', rest: '3 min', notes: 'Focus force principal' },
+                        { name: 'Soulevé de Terre', sets: 2, reps: '3-5', rest: '3 min', notes: 'Mouvement lourd' },
+                        { name: 'Presse à Cuisses', sets: 3, reps: '6-8', rest: '2 min', notes: '' },
+                        { name: 'Leg Curl', sets: 3, reps: '8-10', rest: '90 sec', notes: '' },
+                        { name: 'Mollets Debout', sets: 3, reps: '10-12', rest: '60 sec', notes: '' }
                     ]
                 },
                 intermediate: {
                     upper: [
-                        { name: 'Bench Press', sets: 4, reps: '4-6', rest: '3 min', notes: 'Main strength focus' },
-                        { name: 'Incline Barbell Press', sets: 3, reps: '6-8', rest: '2.5 min', notes: '' },
-                        { name: 'Barbell Rows', sets: 4, reps: '4-6', rest: '3 min', notes: 'Heavy compound' },
-                        { name: 'Weighted Pull-ups', sets: 3, reps: '5-8', rest: '2.5 min', notes: '' },
-                        { name: 'Barbell Curls', sets: 3, reps: '6-8', rest: '2 min', notes: '' },
-                        { name: 'Tricep Dips', sets: 3, reps: '6-8', rest: '2 min', notes: '' }
+                        { name: 'Développé Couché', sets: 4, reps: '4-6', rest: '3 min', notes: 'Focus force principal' },
+                        { name: 'Développé Incliné Barre', sets: 3, reps: '6-8', rest: '2.5 min', notes: '' },
+                        { name: 'Rowing Barre', sets: 4, reps: '4-6', rest: '3 min', notes: 'Mouvement lourd' },
+                        { name: 'Tractions Lestées', sets: 3, reps: '5-8', rest: '2.5 min', notes: '' },
+                        { name: 'Curl Barre', sets: 3, reps: '6-8', rest: '2 min', notes: '' },
+                        { name: 'Dips', sets: 3, reps: '6-8', rest: '2 min', notes: '' }
                     ],
                     lower: [
-                        { name: 'Squat', sets: 4, reps: '4-6', rest: '3 min', notes: 'Main strength focus' },
+                        { name: 'Squat', sets: 4, reps: '4-6', rest: '3 min', notes: 'Focus force principal' },
                         { name: 'Front Squat', sets: 3, reps: '5-6', rest: '2.5 min', notes: '' },
-                        { name: 'Deadlift', sets: 3, reps: '3-5', rest: '3 min', notes: 'Heavy compound' },
-                        { name: 'Walking Lunges', sets: 3, reps: '8-10', rest: '90 sec', notes: '' },
-                        { name: 'Leg Curls', sets: 3, reps: '8-10', rest: '90 sec', notes: '' },
-                        { name: 'Calf Raises', sets: 3, reps: '10-15', rest: '60 sec', notes: '' }
+                        { name: 'Soulevé de Terre', sets: 3, reps: '3-5', rest: '3 min', notes: 'Mouvement lourd' },
+                        { name: 'Fentes Marchées', sets: 3, reps: '8-10', rest: '90 sec', notes: '' },
+                        { name: 'Leg Curl', sets: 3, reps: '8-10', rest: '90 sec', notes: '' },
+                        { name: 'Mollets Debout', sets: 3, reps: '10-15', rest: '60 sec', notes: '' }
                     ]
                 },
                 advanced: {
                     upper: [
-                        { name: 'Bench Press', sets: 5, reps: '3-5', rest: '3.5 min', notes: 'Main strength focus' },
-                        { name: 'Incline Barbell Press', sets: 4, reps: '4-6', rest: '3 min', notes: '' },
-                        { name: 'Barbell Rows', sets: 5, reps: '3-5', rest: '3.5 min', notes: 'Heavy compound' },
-                        { name: 'Weighted Pull-ups', sets: 4, reps: '4-6', rest: '3 min', notes: '' },
-                        { name: 'Barbell Curls', sets: 3, reps: '5-7', rest: '2 min', notes: '' },
-                        { name: 'Close Grip Bench', sets: 3, reps: '5-7', rest: '2 min', notes: '' }
+                        { name: 'Développé Couché', sets: 5, reps: '3-5', rest: '3.5 min', notes: 'Focus force principal' },
+                        { name: 'Développé Incliné Barre', sets: 4, reps: '4-6', rest: '3 min', notes: '' },
+                        { name: 'Rowing Barre', sets: 5, reps: '3-5', rest: '3.5 min', notes: 'Mouvement lourd' },
+                        { name: 'Tractions Lestées', sets: 4, reps: '4-6', rest: '3 min', notes: '' },
+                        { name: 'Curl Barre', sets: 3, reps: '5-7', rest: '2 min', notes: '' },
+                        { name: 'Développé Serré', sets: 3, reps: '5-7', rest: '2 min', notes: '' }
                     ],
                     lower: [
-                        { name: 'Squat', sets: 5, reps: '3-5', rest: '3.5 min', notes: 'Main strength focus' },
+                        { name: 'Squat', sets: 5, reps: '3-5', rest: '3.5 min', notes: 'Focus force principal' },
                         { name: 'Front Squat', sets: 4, reps: '4-6', rest: '3 min', notes: '' },
-                        { name: 'Deadlift', sets: 4, reps: '2-4', rest: '3.5 min', notes: 'Heavy compound' },
-                        { name: 'Bulgarian Split Squat', sets: 3, reps: '6-8', rest: '2 min', notes: '' },
-                        { name: 'Leg Curls', sets: 3, reps: '6-8', rest: '2 min', notes: '' },
-                        { name: 'Weighted Calf Raises', sets: 4, reps: '8-12', rest: '90 sec', notes: '' }
+                        { name: 'Soulevé de Terre', sets: 4, reps: '2-4', rest: '3.5 min', notes: 'Mouvement lourd' },
+                        { name: 'Squat Bulgare', sets: 3, reps: '6-8', rest: '2 min', notes: '' },
+                        { name: 'Leg Curl', sets: 3, reps: '6-8', rest: '2 min', notes: '' },
+                        { name: 'Mollets Lestés', sets: 4, reps: '8-12', rest: '90 sec', notes: '' }
                     ]
                 }
             },
             muscle: {
                 beginner: {
                     upper: [
-                        { name: 'Barbell Bench Press', sets: 4, reps: '8-10', rest: '90 sec', notes: '' },
-                        { name: 'Dumbbell Flyes', sets: 3, reps: '10-12', rest: '60 sec', notes: '' },
-                        { name: 'Barbell Rows', sets: 4, reps: '8-10', rest: '90 sec', notes: '' },
-                        { name: 'Lat Pulldowns', sets: 3, reps: '10-12', rest: '60 sec', notes: '' },
-                        { name: 'Dumbbell Curls', sets: 3, reps: '10-12', rest: '60 sec', notes: '' },
-                        { name: 'Tricep Rope Pushdowns', sets: 3, reps: '10-12', rest: '60 sec', notes: '' }
+                        { name: 'Développé Couché Barre', sets: 4, reps: '8-10', rest: '90 sec', notes: '' },
+                        { name: 'Écartés Haltères', sets: 3, reps: '10-12', rest: '60 sec', notes: '' },
+                        { name: 'Rowing Barre', sets: 4, reps: '8-10', rest: '90 sec', notes: '' },
+                        { name: 'Tirage Vertical', sets: 3, reps: '10-12', rest: '60 sec', notes: '' },
+                        { name: 'Curl Haltères', sets: 3, reps: '10-12', rest: '60 sec', notes: '' },
+                        { name: 'Extension Triceps Corde', sets: 3, reps: '10-12', rest: '60 sec', notes: '' }
                     ],
                     lower: [
-                        { name: 'Barbell Squat', sets: 4, reps: '8-10', rest: '2 min', notes: '' },
-                        { name: 'Leg Press', sets: 3, reps: '10-12', rest: '90 sec', notes: '' },
-                        { name: 'Leg Curls', sets: 3, reps: '10-12', rest: '60 sec', notes: '' },
-                        { name: 'Leg Extensions', sets: 3, reps: '10-12', rest: '60 sec', notes: '' },
-                        { name: 'Calf Raises', sets: 4, reps: '12-15', rest: '60 sec', notes: '' }
+                        { name: 'Squat Barre', sets: 4, reps: '8-10', rest: '2 min', notes: '' },
+                        { name: 'Presse à Cuisses', sets: 3, reps: '10-12', rest: '90 sec', notes: '' },
+                        { name: 'Leg Curl', sets: 3, reps: '10-12', rest: '60 sec', notes: '' },
+                        { name: 'Leg Extension', sets: 3, reps: '10-12', rest: '60 sec', notes: '' },
+                        { name: 'Mollets Debout', sets: 4, reps: '12-15', rest: '60 sec', notes: '' }
                     ]
                 },
                 intermediate: {
                     upper: [
-                        { name: 'Barbell Bench Press', sets: 4, reps: '8-10', rest: '90 sec', notes: 'Primary focus' },
-                        { name: 'Incline Dumbbell Press', sets: 3, reps: '9-11', rest: '90 sec', notes: '' },
-                        { name: 'Dumbbell Flyes', sets: 3, reps: '10-12', rest: '60 sec', notes: '' },
-                        { name: 'Barbell Rows', sets: 4, reps: '8-10', rest: '90 sec', notes: 'Primary focus' },
-                        { name: 'Seal Rows', sets: 3, reps: '10-12', rest: '60 sec', notes: '' },
-                        { name: 'Dumbbell Curls', sets: 3, reps: '10-12', rest: '70 sec', notes: '' },
-                        { name: 'Tricep Dips', sets: 3, reps: '9-11', rest: '70 sec', notes: '' }
+                        { name: 'Développé Couché Barre', sets: 4, reps: '8-10', rest: '90 sec', notes: 'Focus principal' },
+                        { name: 'Développé Incliné Haltères', sets: 3, reps: '9-11', rest: '90 sec', notes: '' },
+                        { name: 'Écartés Haltères', sets: 3, reps: '10-12', rest: '60 sec', notes: '' },
+                        { name: 'Rowing Barre', sets: 4, reps: '8-10', rest: '90 sec', notes: 'Focus principal' },
+                        { name: 'Rowing Seal', sets: 3, reps: '10-12', rest: '60 sec', notes: '' },
+                        { name: 'Curl Haltères', sets: 3, reps: '10-12', rest: '70 sec', notes: '' },
+                        { name: 'Dips', sets: 3, reps: '9-11', rest: '70 sec', notes: '' }
                     ],
                     lower: [
-                        { name: 'Barbell Squat', sets: 4, reps: '8-10', rest: '2 min', notes: 'Primary focus' },
-                        { name: 'Incline Leg Press', sets: 3, reps: '10-12', rest: '90 sec', notes: '' },
-                        { name: 'Leg Curls', sets: 3, reps: '10-12', rest: '70 sec', notes: '' },
-                        { name: 'Leg Extensions', sets: 3, reps: '10-12', rest: '70 sec', notes: '' },
+                        { name: 'Squat Barre', sets: 4, reps: '8-10', rest: '2 min', notes: 'Focus principal' },
+                        { name: 'Presse Inclinée', sets: 3, reps: '10-12', rest: '90 sec', notes: '' },
+                        { name: 'Leg Curl', sets: 3, reps: '10-12', rest: '70 sec', notes: '' },
+                        { name: 'Leg Extension', sets: 3, reps: '10-12', rest: '70 sec', notes: '' },
                         { name: 'Hack Squat', sets: 3, reps: '10-12', rest: '90 sec', notes: '' },
-                        { name: 'Calf Raises', sets: 4, reps: '12-15', rest: '60 sec', notes: '' }
+                        { name: 'Mollets Debout', sets: 4, reps: '12-15', rest: '60 sec', notes: '' }
                     ]
                 },
                 advanced: {
                     upper: [
-                        { name: 'Barbell Bench Press', sets: 5, reps: '8-10', rest: '2 min', notes: 'Primary focus' },
-                        { name: 'Incline Barbell Press', sets: 4, reps: '8-10', rest: '90 sec', notes: '' },
-                        { name: 'Dumbbell Flyes', sets: 3, reps: '10-12', rest: '60 sec', notes: '' },
-                        { name: 'Barbell Rows', sets: 5, reps: '8-10', rest: '2 min', notes: 'Primary focus' },
-                        { name: 'T-Bar Rows', sets: 3, reps: '10-12', rest: '90 sec', notes: '' },
-                        { name: 'Dumbbell Curls', sets: 3, reps: '10-12', rest: '70 sec', notes: '' },
-                        { name: 'EZ Bar Curls', sets: 3, reps: '10-12', rest: '70 sec', notes: '' },
-                        { name: 'Tricep Dips', sets: 4, reps: '8-10', rest: '90 sec', notes: '' }
+                        { name: 'Développé Couché Barre', sets: 5, reps: '8-10', rest: '2 min', notes: 'Focus principal' },
+                        { name: 'Développé Incliné Barre', sets: 4, reps: '8-10', rest: '90 sec', notes: '' },
+                        { name: 'Écartés Haltères', sets: 3, reps: '10-12', rest: '60 sec', notes: '' },
+                        { name: 'Rowing Barre', sets: 5, reps: '8-10', rest: '2 min', notes: 'Focus principal' },
+                        { name: 'T-Bar Row', sets: 3, reps: '10-12', rest: '90 sec', notes: '' },
+                        { name: 'Curl Haltères', sets: 3, reps: '10-12', rest: '70 sec', notes: '' },
+                        { name: 'Curl Barre EZ', sets: 3, reps: '10-12', rest: '70 sec', notes: '' },
+                        { name: 'Dips', sets: 4, reps: '8-10', rest: '90 sec', notes: '' }
                     ],
                     lower: [
-                        { name: 'Barbell Squat', sets: 5, reps: '8-10', rest: '2 min', notes: 'Primary focus' },
+                        { name: 'Squat Barre', sets: 5, reps: '8-10', rest: '2 min', notes: 'Focus principal' },
                         { name: 'Front Squat', sets: 3, reps: '8-10', rest: '2 min', notes: '' },
-                        { name: 'Leg Press', sets: 4, reps: '10-12', rest: '90 sec', notes: '' },
-                        { name: 'Leg Curls', sets: 4, reps: '10-12', rest: '70 sec', notes: '' },
-                        { name: 'Leg Extensions', sets: 4, reps: '10-12', rest: '70 sec', notes: '' },
+                        { name: 'Presse à Cuisses', sets: 4, reps: '10-12', rest: '90 sec', notes: '' },
+                        { name: 'Leg Curl', sets: 4, reps: '10-12', rest: '70 sec', notes: '' },
+                        { name: 'Leg Extension', sets: 4, reps: '10-12', rest: '70 sec', notes: '' },
                         { name: 'Hack Squat', sets: 3, reps: '10-12', rest: '90 sec', notes: '' },
-                        { name: 'Calf Raises', sets: 5, reps: '12-15', rest: '60 sec', notes: '' }
+                        { name: 'Mollets Debout', sets: 5, reps: '12-15', rest: '60 sec', notes: '' }
                     ]
                 }
             },
             endurance: {
                 beginner: {
                     cardio: [
-                        { name: 'Treadmill Running', sets: 1, reps: '20-30 min', rest: '2-3 min walk', notes: 'Steady pace' },
-                        { name: 'Bodyweight Circuits', sets: 3, reps: '40 sec on / 20 sec off', rest: '2 min', notes: 'Burpees, mountain climbers, jumping jacks' },
-                        { name: 'Rowing Machine', sets: 1, reps: '15-20 min', rest: 'N/A', notes: 'Steady state' }
+                        { name: 'Course Tapis', sets: 1, reps: '20-30 min', rest: '2-3 min marche', notes: 'Rythme stable' },
+                        { name: 'Circuits Poids du Corps', sets: 3, reps: '40 sec / 20 sec repos', rest: '2 min', notes: 'Burpees, mountain climbers, jumping jacks' },
+                        { name: 'Rameur', sets: 1, reps: '15-20 min', rest: 'N/A', notes: 'État stable' }
                     ],
                     strength: [
-                        { name: 'Dumbbell Squats', sets: 3, reps: '12-15', rest: '60 sec', notes: '' },
-                        { name: 'Push-ups', sets: 3, reps: '10-15', rest: '60 sec', notes: '' },
-                        { name: 'Lunges', sets: 3, reps: '12-15', rest: '60 sec', notes: '' },
-                        { name: 'Dumbbell Rows', sets: 3, reps: '12-15', rest: '60 sec', notes: '' }
+                        { name: 'Squats Haltères', sets: 3, reps: '12-15', rest: '60 sec', notes: '' },
+                        { name: 'Pompes', sets: 3, reps: '10-15', rest: '60 sec', notes: '' },
+                        { name: 'Fentes', sets: 3, reps: '12-15', rest: '60 sec', notes: '' },
+                        { name: 'Rowing Haltères', sets: 3, reps: '12-15', rest: '60 sec', notes: '' }
                     ]
                 },
                 intermediate: {
                     cardio: [
-                        { name: 'Interval Running', sets: 1, reps: '30-40 min mixed', rest: '2-3 min', notes: '2 min hard / 1 min easy' },
-                        { name: 'HIIT Circuits', sets: 4, reps: '45 sec on / 15 sec off', rest: '2 min', notes: 'Mixed cardio exercises' },
-                        { name: 'Rowing Machine', sets: 1, reps: '20-25 min', rest: 'N/A', notes: 'Include sprint intervals' }
+                        { name: 'Course Intervalles', sets: 1, reps: '30-40 min mixte', rest: '2-3 min', notes: '2 min intense / 1 min facile' },
+                        { name: 'HIIT Circuits', sets: 4, reps: '45 sec / 15 sec repos', rest: '2 min', notes: 'Exercices cardio variés' },
+                        { name: 'Rameur', sets: 1, reps: '20-25 min', rest: 'N/A', notes: 'Inclure sprints' }
                     ],
                     strength: [
-                        { name: 'Barbell Squats', sets: 3, reps: '10-12', rest: '90 sec', notes: '' },
-                        { name: 'Push-ups', sets: 3, reps: '15-20', rest: '60 sec', notes: '' },
-                        { name: 'Bulgarian Split Squats', sets: 3, reps: '12-15', rest: '60 sec', notes: '' },
-                        { name: 'Barbell Rows', sets: 3, reps: '10-12', rest: '90 sec', notes: '' },
-                        { name: 'Pull-ups', sets: 3, reps: '8-12', rest: '90 sec', notes: '' }
+                        { name: 'Squats Barre', sets: 3, reps: '10-12', rest: '90 sec', notes: '' },
+                        { name: 'Pompes', sets: 3, reps: '15-20', rest: '60 sec', notes: '' },
+                        { name: 'Squats Bulgares', sets: 3, reps: '12-15', rest: '60 sec', notes: '' },
+                        { name: 'Rowing Barre', sets: 3, reps: '10-12', rest: '90 sec', notes: '' },
+                        { name: 'Tractions', sets: 3, reps: '8-12', rest: '90 sec', notes: '' }
                     ]
                 },
                 advanced: {
                     cardio: [
-                        { name: 'Long Distance Run', sets: 1, reps: '45-60 min', rest: 'N/A', notes: 'Steady pace, conversational' },
-                        { name: 'Advanced HIIT', sets: 5, reps: '50 sec on / 10 sec off', rest: '2.5 min', notes: 'High intensity mixed cardio' },
-                        { name: 'Rowing Machine', sets: 1, reps: '30-40 min', rest: 'N/A', notes: 'Heavy intervals mixed in' }
+                        { name: 'Course Longue Distance', sets: 1, reps: '45-60 min', rest: 'N/A', notes: 'Rythme stable, conversationnel' },
+                        { name: 'HIIT Avancé', sets: 5, reps: '50 sec / 10 sec repos', rest: '2.5 min', notes: 'Haute intensité cardio mixte' },
+                        { name: 'Rameur', sets: 1, reps: '30-40 min', rest: 'N/A', notes: 'Intervalles intenses inclus' }
                     ],
                     strength: [
-                        { name: 'Barbell Squats', sets: 4, reps: '8-10', rest: '2 min', notes: '' },
-                        { name: 'Barbell Rows', sets: 4, reps: '8-10', rest: '2 min', notes: '' },
-                        { name: 'Pull-ups', sets: 4, reps: '10-15', rest: '90 sec', notes: '' },
-                        { name: 'Single Leg Deadlifts', sets: 3, reps: '10-12', rest: '90 sec', notes: '' },
-                        { name: 'Push-ups', sets: 3, reps: '20+', rest: '60 sec', notes: '' }
+                        { name: 'Squats Barre', sets: 4, reps: '8-10', rest: '2 min', notes: '' },
+                        { name: 'Rowing Barre', sets: 4, reps: '8-10', rest: '2 min', notes: '' },
+                        { name: 'Tractions', sets: 4, reps: '10-15', rest: '90 sec', notes: '' },
+                        { name: 'Soulevé Terre Une Jambe', sets: 3, reps: '10-12', rest: '90 sec', notes: '' },
+                        { name: 'Pompes', sets: 3, reps: '20+', rest: '60 sec', notes: '' }
                     ]
                 }
             },
             'weight-loss': {
                 beginner: {
                     cardio: [
-                        { name: 'Brisk Walking', sets: 1, reps: '30-40 min', rest: 'N/A', notes: 'Moderate pace' },
-                        { name: 'Jump Rope', sets: 3, reps: '1 min', rest: '1 min', notes: '' },
-                        { name: 'Cycling', sets: 1, reps: '20-30 min', rest: 'N/A', notes: 'Moderate resistance' }
+                        { name: 'Marche Rapide', sets: 1, reps: '30-40 min', rest: 'N/A', notes: 'Rythme modéré' },
+                        { name: 'Corde à Sauter', sets: 3, reps: '1 min', rest: '1 min', notes: '' },
+                        { name: 'Vélo', sets: 1, reps: '20-30 min', rest: 'N/A', notes: 'Résistance modérée' }
                     ],
                     strength: [
-                        { name: 'Bodyweight Squats', sets: 3, reps: '15-20', rest: '60 sec', notes: '' },
-                        { name: 'Push-ups', sets: 3, reps: '10-15', rest: '60 sec', notes: '' },
-                        { name: 'Walking Lunges', sets: 3, reps: '12-15', rest: '60 sec', notes: '' },
+                        { name: 'Squats Poids du Corps', sets: 3, reps: '15-20', rest: '60 sec', notes: '' },
+                        { name: 'Pompes', sets: 3, reps: '10-15', rest: '60 sec', notes: '' },
+                        { name: 'Fentes Marchées', sets: 3, reps: '12-15', rest: '60 sec', notes: '' },
                         { name: 'Burpees', sets: 2, reps: '10-12', rest: '90 sec', notes: '' },
                         { name: 'Mountain Climbers', sets: 3, reps: '20', rest: '60 sec', notes: '' }
                     ]
                 },
                 intermediate: {
                     cardio: [
-                        { name: 'Running/Jogging', sets: 1, reps: '30-45 min', rest: 'N/A', notes: 'Steady pace' },
-                        { name: 'Jump Rope HIIT', sets: 4, reps: '45 sec on / 15 sec off', rest: '2 min', notes: '' },
-                        { name: 'Cycling Intervals', sets: 1, reps: '35-45 min mixed', rest: 'N/A', notes: '2 min hard / 1 min easy' }
+                        { name: 'Course/Jogging', sets: 1, reps: '30-45 min', rest: 'N/A', notes: 'Rythme stable' },
+                        { name: 'HIIT Corde à Sauter', sets: 4, reps: '45 sec / 15 sec repos', rest: '2 min', notes: '' },
+                        { name: 'Vélo Intervalles', sets: 1, reps: '35-45 min mixte', rest: 'N/A', notes: '2 min intense / 1 min facile' }
                     ],
                     strength: [
-                        { name: 'Barbell Squats', sets: 3, reps: '12-15', rest: '90 sec', notes: '' },
-                        { name: 'Push-ups', sets: 3, reps: '15-20', rest: '60 sec', notes: '' },
-                        { name: 'Dumbbell Lunges', sets: 3, reps: '12-15', rest: '60 sec', notes: '' },
-                        { name: 'Dumbbell Rows', sets: 3, reps: '12-15', rest: '60 sec', notes: '' },
+                        { name: 'Squats Barre', sets: 3, reps: '12-15', rest: '90 sec', notes: '' },
+                        { name: 'Pompes', sets: 3, reps: '15-20', rest: '60 sec', notes: '' },
+                        { name: 'Fentes Haltères', sets: 3, reps: '12-15', rest: '60 sec', notes: '' },
+                        { name: 'Rowing Haltères', sets: 3, reps: '12-15', rest: '60 sec', notes: '' },
                         { name: 'Burpees', sets: 3, reps: '12-15', rest: '60 sec', notes: '' },
                         { name: 'Jump Squats', sets: 3, reps: '15-20', rest: '60 sec', notes: '' }
                     ]
                 },
                 advanced: {
                     cardio: [
-                        { name: 'Long Run', sets: 1, reps: '45-60 min', rest: 'N/A', notes: 'Steady pace' },
-                        { name: 'Advanced HIIT', sets: 5, reps: '50 sec on / 10 sec off', rest: '2 min', notes: 'Complex movements' },
-                        { name: 'Cycling', sets: 1, reps: '45-60 min', rest: 'N/A', notes: 'Heavy intervals' }
+                        { name: 'Course Longue', sets: 1, reps: '45-60 min', rest: 'N/A', notes: 'Rythme stable' },
+                        { name: 'HIIT Avancé', sets: 5, reps: '50 sec / 10 sec repos', rest: '2 min', notes: 'Mouvements complexes' },
+                        { name: 'Vélo', sets: 1, reps: '45-60 min', rest: 'N/A', notes: 'Intervalles intenses' }
                     ],
                     strength: [
-                        { name: 'Barbell Squats', sets: 4, reps: '10-12', rest: '90 sec', notes: '' },
-                        { name: 'Push-ups', sets: 4, reps: '20+', rest: '60 sec', notes: '' },
-                        { name: 'Dumbbell Complex', sets: 4, reps: '10-12', rest: '90 sec', notes: 'Multiple movements' },
+                        { name: 'Squats Barre', sets: 4, reps: '10-12', rest: '90 sec', notes: '' },
+                        { name: 'Pompes', sets: 4, reps: '20+', rest: '60 sec', notes: '' },
+                        { name: 'Complexe Haltères', sets: 4, reps: '10-12', rest: '90 sec', notes: 'Mouvements multiples' },
                         { name: 'Kettlebell Swings', sets: 3, reps: '20', rest: '60 sec', notes: '' },
                         { name: 'Battle Ropes', sets: 3, reps: '30-40 sec', rest: '60 sec', notes: '' },
-                        { name: 'Sled Pushes', sets: 3, reps: '30-40m', rest: '90 sec', notes: '' }
+                        { name: 'Poussée Traîneau', sets: 3, reps: '30-40m', rest: '90 sec', notes: '' }
                     ]
                 }
             },
             balanced: {
                 beginner: {
                     workout: [
-                        { name: 'Barbell Squats', sets: 3, reps: '8-10', rest: '2 min', notes: '' },
-                        { name: 'Bench Press', sets: 3, reps: '8-10', rest: '90 sec', notes: '' },
-                        { name: 'Barbell Rows', sets: 3, reps: '8-10', rest: '90 sec', notes: '' },
-                        { name: 'Overhead Press', sets: 2, reps: '8-10', rest: '90 sec', notes: '' },
-                        { name: 'Dumbbell Curls', sets: 2, reps: '10-12', rest: '60 sec', notes: '' },
-                        { name: 'Tricep Dips', sets: 2, reps: '8-10', rest: '60 sec', notes: '' },
-                        { name: 'Leg Extensions', sets: 2, reps: '12-15', rest: '60 sec', notes: '' }
+                        { name: 'Squats Barre', sets: 3, reps: '8-10', rest: '2 min', notes: '' },
+                        { name: 'Développé Couché', sets: 3, reps: '8-10', rest: '90 sec', notes: '' },
+                        { name: 'Rowing Barre', sets: 3, reps: '8-10', rest: '90 sec', notes: '' },
+                        { name: 'Développé Militaire', sets: 2, reps: '8-10', rest: '90 sec', notes: '' },
+                        { name: 'Curl Haltères', sets: 2, reps: '10-12', rest: '60 sec', notes: '' },
+                        { name: 'Dips', sets: 2, reps: '8-10', rest: '60 sec', notes: '' },
+                        { name: 'Leg Extension', sets: 2, reps: '12-15', rest: '60 sec', notes: '' }
                     ]
                 },
                 intermediate: {
                     workout: [
-                        { name: 'Barbell Squats', sets: 4, reps: '8-10', rest: '2 min', notes: '' },
-                        { name: 'Bench Press', sets: 4, reps: '8-10', rest: '2 min', notes: '' },
-                        { name: 'Barbell Rows', sets: 4, reps: '8-10', rest: '2 min', notes: '' },
-                        { name: 'Overhead Press', sets: 3, reps: '8-10', rest: '90 sec', notes: '' },
-                        { name: 'Pull-ups', sets: 3, reps: '8-10', rest: '90 sec', notes: '' },
-                        { name: 'Dumbbell Curls', sets: 3, reps: '10-12', rest: '70 sec', notes: '' },
-                        { name: 'Tricep Dips', sets: 3, reps: '8-10', rest: '70 sec', notes: '' },
-                        { name: 'Leg Curls', sets: 2, reps: '12-15', rest: '60 sec', notes: '' }
+                        { name: 'Squats Barre', sets: 4, reps: '8-10', rest: '2 min', notes: '' },
+                        { name: 'Développé Couché', sets: 4, reps: '8-10', rest: '2 min', notes: '' },
+                        { name: 'Rowing Barre', sets: 4, reps: '8-10', rest: '2 min', notes: '' },
+                        { name: 'Développé Militaire', sets: 3, reps: '8-10', rest: '90 sec', notes: '' },
+                        { name: 'Tractions', sets: 3, reps: '8-10', rest: '90 sec', notes: '' },
+                        { name: 'Curl Haltères', sets: 3, reps: '10-12', rest: '70 sec', notes: '' },
+                        { name: 'Dips', sets: 3, reps: '8-10', rest: '70 sec', notes: '' },
+                        { name: 'Leg Curl', sets: 2, reps: '12-15', rest: '60 sec', notes: '' }
                     ]
                 },
                 advanced: {
                     workout: [
-                        { name: 'Barbell Squats', sets: 4, reps: '6-8', rest: '2.5 min', notes: 'Strength focus' },
-                        { name: 'Incline Barbell Press', sets: 3, reps: '8-10', rest: '90 sec', notes: '' },
-                        { name: 'Barbell Rows', sets: 4, reps: '6-8', rest: '2.5 min', notes: 'Strength focus' },
-                        { name: 'Overhead Press', sets: 3, reps: '6-8', rest: '2 min', notes: '' },
-                        { name: 'Weighted Pull-ups', sets: 3, reps: '6-8', rest: '2 min', notes: '' },
-                        { name: 'Barbell Curls', sets: 3, reps: '8-10', rest: '90 sec', notes: '' },
-                        { name: 'Tricep Dips', sets: 3, reps: '6-8', rest: '2 min', notes: '' },
-                        { name: 'Leg Curls', sets: 3, reps: '10-12', rest: '70 sec', notes: '' }
+                        { name: 'Squats Barre', sets: 4, reps: '6-8', rest: '2.5 min', notes: 'Focus force' },
+                        { name: 'Développé Incliné Barre', sets: 3, reps: '8-10', rest: '90 sec', notes: '' },
+                        { name: 'Rowing Barre', sets: 4, reps: '6-8', rest: '2.5 min', notes: 'Focus force' },
+                        { name: 'Développé Militaire', sets: 3, reps: '6-8', rest: '2 min', notes: '' },
+                        { name: 'Tractions Lestées', sets: 3, reps: '6-8', rest: '2 min', notes: '' },
+                        { name: 'Curl Barre', sets: 3, reps: '8-10', rest: '90 sec', notes: '' },
+                        { name: 'Dips', sets: 3, reps: '6-8', rest: '2 min', notes: '' },
+                        { name: 'Leg Curl', sets: 3, reps: '10-12', rest: '70 sec', notes: '' }
                     ]
                 }
             }
@@ -736,84 +1207,126 @@
         // Form submission
         document.getElementById('workoutForm').addEventListener('submit', function(e) {
             e.preventDefault();
+            
+            // Vérifier le paiement
+            if (!paymentCompleted) {
+                showError('⚠️ Veuillez d\'abord effectuer le paiement pour générer votre programme.');
+                document.getElementById('paymentSection').scrollIntoView({ behavior: 'smooth' });
+                return;
+            }
+            
             generateProgram();
         });
 
         function generateProgram() {
-            // Get form values
-            const weight = parseFloat(document.getElementById('weight').value);
-            const goal = document.getElementById('goal').value;
-            const experience = document.getElementById('experience').value;
-            const sessionDuration = parseInt(document.getElementById('sessionDuration').value);
-            const selectedDays = Array.from(document.querySelectorAll('input[name="days"]:checked'))
-                .map(cb => cb.value);
+            // Afficher le spinner
+            document.getElementById('loadingSpinner').classList.add('active');
+            document.getElementById('programInfo').style.display = 'none';
+            
+            // Simuler un délai de génération pour l'UX
+            setTimeout(() => {
+                // Get form values
+                const weight = parseFloat(document.getElementById('weight').value);
+                const goal = document.getElementById('goal').value;
+                const experience = document.getElementById('experience').value;
+                const sessionDuration = parseInt(document.getElementById('sessionDuration').value);
+                const selectedDays = Array.from(document.querySelectorAll('input[name="days"]:checked'))
+                    .map(cb => cb.value);
 
-            // Validation
-            const errorEl = document.getElementById('errorMessage');
-            errorEl.classList.remove('active');
+                // Validation
+                const errorEl = document.getElementById('errorMessage');
+                errorEl.classList.remove('active');
 
-            if (!weight || weight < 50 || weight > 500) {
-                showError('Please enter a valid weight between 50 and 500 lbs');
-                return;
-            }
+                if (!weight || weight < 50 || weight > 500) {
+                    showError('Veuillez entrer un poids valide entre 50 et 500 lbs');
+                    document.getElementById('loadingSpinner').classList.remove('active');
+                    return;
+                }
 
-            if (!goal) {
-                showError('Please select a primary goal');
-                return;
-            }
+                if (!goal) {
+                    showError('Veuillez sélectionner un objectif principal');
+                    document.getElementById('loadingSpinner').classList.remove('active');
+                    return;
+                }
 
-            if (!experience) {
-                showError('Please select your experience level');
-                return;
-            }
+                if (!experience) {
+                    showError('Veuillez sélectionner votre niveau d\'expérience');
+                    document.getElementById('loadingSpinner').classList.remove('active');
+                    return;
+                }
 
-            if (selectedDays.length === 0) {
-                showError('Please select at least one training day');
-                return;
-            }
+                if (selectedDays.length === 0) {
+                    showError('Veuillez sélectionner au moins un jour d\'entraînement');
+                    document.getElementById('loadingSpinner').classList.remove('active');
+                    return;
+                }
 
-            if (selectedDays.length > 6) {
-                showError('Please select no more than 6 training days');
-                return;
-            }
+                if (selectedDays.length > 6) {
+                    showError('Veuillez sélectionner maximum 6 jours d\'entraînement (il faut au moins un jour de repos)');
+                    document.getElementById('loadingSpinner').classList.remove('active');
+                    return;
+                }
 
-            // Generate the program
-            const program = createProgram(weight, goal, experience, selectedDays, sessionDuration);
-            displayProgram(program, goal, experience, selectedDays, sessionDuration);
-            showSuccess('Program generated successfully!');
+                // Generate the program
+                const program = createProgram(weight, goal, experience, selectedDays, sessionDuration);
+                displayProgram(program, goal, experience, selectedDays, sessionDuration);
+                showSuccess('Programme généré avec succès !');
+                
+                // Masquer le spinner
+                document.getElementById('loadingSpinner').classList.remove('active');
+            }, 1500); // Délai de 1.5 secondes pour l'effet de génération
         }
 
         function createProgram(weight, goal, experience, selectedDays, duration) {
-            const daysOfWeek = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
-            const workoutIndex = {};
+            const daysOfWeek = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi', 'Dimanche'];
             const program = {};
 
             // Get workout data
             const goalWorkouts = workoutDatabase[goal][experience];
 
-            // Distribute workouts across selected days
+            // Distribute workouts across selected days with improved logic
             if (goal === 'endurance' || goal === 'weight-loss') {
-                // Alternate cardio and strength
+                // Alternate cardio and strength optimally
                 let isCardio = true;
                 selectedDays.forEach((day, index) => {
-                    if (isCardio) {
-                        program[day] = goalWorkouts.cardio[index % goalWorkouts.cardio.length];
-                    } else {
-                        program[day] = goalWorkouts.strength[index % goalWorkouts.strength.length];
+                    // Start with cardio for endurance/weight-loss
+                    if (index === 0) isCardio = true;
+                    
+                    if (isCardio && goalWorkouts.cardio) {
+                        program[day] = goalWorkouts.cardio;
+                    } else if (goalWorkouts.strength) {
+                        program[day] = goalWorkouts.strength;
                     }
+                    
+                    // Alternate properly
                     isCardio = !isCardio;
                 });
             } else if (goal === 'balanced') {
-                // All days same workout structure
+                // All days same workout structure for balanced approach
                 selectedDays.forEach(day => {
                     program[day] = goalWorkouts.workout;
                 });
             } else {
-                // Alternate upper and lower for strength/muscle goals
+                // Improved alternation for strength/muscle goals
+                // Start with upper body, then alternate
                 let isUpper = true;
                 selectedDays.forEach((day, index) => {
-                    program[day] = isUpper ? goalWorkouts.upper : goalWorkouts.lower;
-                    if (selectedDays.length > 1) isUpper = !isUpper;
+                    if (selectedDays.length === 1) {
+                        // Single day: full body workout (upper focus)
+                        program[day] = goalWorkouts.upper;
+                    } else if (selectedDays.length === 2) {
+                        // 2 days: upper/lower split
+                        program[day] = isUpper ? goalWorkouts.upper : goalWorkouts.lower;
+                        isUpper = !isUpper;
+                    } else {
+                        // 3+ days: proper upper/lower alternation
+                        // Ensure we don't do same muscle group back-to-back
+                        if (index === 0) {
+                            isUpper = true; // Start with upper
+                        }
+                        program[day] = isUpper ? goalWorkouts.upper : goalWorkouts.lower;
+                        isUpper = !isUpper;
+                    }
                 });
             }
 
@@ -826,8 +1339,8 @@
 
             let totalExercises = 0;
             let totalSets = 0;
-            const restDays = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
-                .filter(day => !selectedDays.includes(day));
+            const allDays = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi', 'Dimanche'];
+            const restDays = allDays.filter(day => !selectedDays.includes(day));
 
             // Training days
             selectedDays.forEach(day => {
@@ -841,10 +1354,10 @@
                     exercises.forEach(exercise => {
                         totalExercises++;
                         totalSets += exercise.sets;
-                        const details = `${exercise.sets} sets × ${exercise.reps}${exercise.notes ? ' (' + exercise.notes + ')' : ''}`;
+                        const details = `${exercise.sets} séries × ${exercise.reps}${exercise.notes ? ' (' + exercise.notes + ')' : ''}`;
                         dayHtml += `<li class="exercise-item">
                             <div class="exercise-name">${exercise.name}</div>
-                            <div class="exercise-details">${details}<br>Rest: ${exercise.rest}</div>
+                            <div class="exercise-details">${details}<br>Repos: ${exercise.rest}</div>
                         </li>`;
                     });
                 }
@@ -854,15 +1367,15 @@
                 schedule.appendChild(dayEl);
             });
 
-            // Rest days
-            restDays.slice(0, 7 - selectedDays.length).forEach(day => {
+            // Rest days - only show remaining days to complete the week
+            restDays.forEach(day => {
                 const dayEl = document.createElement('div');
                 dayEl.className = 'workout-day rest-day';
                 dayEl.innerHTML = `
                     <h3>${day}</h3>
                     <div class="rest-content">
-                        <p>Rest & Recovery Day</p>
-                        <p>Active recovery, stretching, or light cardio optional</p>
+                        <p>Jour de Repos & Récupération</p>
+                        <p>Récupération active, étirements ou cardio léger optionnel</p>
                     </div>
                 `;
                 schedule.appendChild(dayEl);
@@ -887,6 +1400,7 @@
             errorEl.textContent = message;
             errorEl.classList.add('active');
             errorEl.scrollIntoView({ behavior: 'smooth' });
+            setTimeout(() => errorEl.classList.remove('active'), 5000);
         }
 
         function showSuccess(message) {
@@ -899,18 +1413,20 @@
         function copyToClipboard() {
             const weight = document.getElementById('weight').value;
             const goal = document.getElementById('goal').value;
+            const goalText = document.getElementById('goal').selectedOptions[0].text;
             const experience = document.getElementById('experience').value;
+            const experienceText = document.getElementById('experience').selectedOptions[0].text;
             const selectedDays = Array.from(document.querySelectorAll('input[name="days"]:checked'))
                 .map(cb => cb.value);
 
-            let text = 'BANE WORKOUT PROGRAM\n';
-            text += '====================\n\n';
-            text += `Weight: ${weight} lbs\n`;
-            text += `Goal: ${goal.replace('-', ' ').toUpperCase()}\n`;
-            text += `Experience: ${experience}\n`;
-            text += `Training Days: ${selectedDays.join(', ')}\n\n`;
-            text += 'WORKOUT SCHEDULE:\n';
-            text += '=================\n\n';
+            let text = 'PROGRAMME D\'ENTRAÎNEMENT BANEWORKOUT\n';
+            text += '========================================\n\n';
+            text += `Poids: ${weight} lbs\n`;
+            text += `Objectif: ${goalText}\n`;
+            text += `Niveau: ${experienceText}\n`;
+            text += `Jours d'entraînement: ${selectedDays.join(', ')}\n\n`;
+            text += 'PLANNING D\'ENTRAÎNEMENT:\n';
+            text += '=========================\n\n';
 
             document.querySelectorAll('.workout-day').forEach(day => {
                 const title = day.querySelector('h3').textContent;
@@ -918,7 +1434,11 @@
 
                 const exercises = day.querySelectorAll('.exercise-item');
                 if (exercises.length === 0) {
-                    text += '  Rest & Recovery Day\n';
+                    const restContent = day.querySelector('.rest-content');
+                    if (restContent) {
+                        text += '  Jour de Repos & Récupération\n';
+                        text += '  Récupération active, étirements ou cardio léger optionnel\n';
+                    }
                 } else {
                     exercises.forEach(ex => {
                         const name = ex.querySelector('.exercise-name').textContent;
@@ -929,29 +1449,39 @@
                 text += '\n';
             });
 
+            text += '\n========================================\n';
+            text += 'Créé par BaneWorkout - Bastien Verdu\n';
+            text += 'Édition workout-brothers\n';
+            text += '========================================\n';
+
             navigator.clipboard.writeText(text).then(() => {
                 const feedback = document.getElementById('copyFeedback');
                 feedback.classList.add('active');
                 setTimeout(() => feedback.classList.remove('active'), 2000);
+            }).catch(err => {
+                alert('Erreur lors de la copie. Veuillez réessayer.');
+                console.error('Erreur de copie:', err);
             });
         }
 
         function downloadProgram() {
             const weight = document.getElementById('weight').value;
             const goal = document.getElementById('goal').value;
+            const goalText = document.getElementById('goal').selectedOptions[0].text;
             const experience = document.getElementById('experience').value;
+            const experienceText = document.getElementById('experience').selectedOptions[0].text;
             const selectedDays = Array.from(document.querySelectorAll('input[name="days"]:checked'))
                 .map(cb => cb.value);
 
-            let content = 'BANE WORKOUT PROGRAM\n';
-            content += '====================\n\n';
-            content += `Weight: ${weight} lbs\n`;
-            content += `Goal: ${goal.replace('-', ' ').toUpperCase()}\n`;
-            content += `Experience: ${experience}\n`;
-            content += `Training Days: ${selectedDays.join(', ')}\n`;
-            content += `Generated: ${new Date().toLocaleString()}\n\n`;
-            content += 'WORKOUT SCHEDULE:\n';
-            content += '=================\n\n';
+            let content = 'PROGRAMME D\'ENTRAÎNEMENT BANEWORKOUT\n';
+            content += '========================================\n\n';
+            content += `Poids: ${weight} lbs\n`;
+            content += `Objectif: ${goalText}\n`;
+            content += `Niveau: ${experienceText}\n`;
+            content += `Jours d'entraînement: ${selectedDays.join(', ')}\n`;
+            content += `Généré le: ${new Date().toLocaleString('fr-FR')}\n\n`;
+            content += 'PLANNING D\'ENTRAÎNEMENT:\n';
+            content += '=========================\n\n';
 
             document.querySelectorAll('.workout-day').forEach(day => {
                 const title = day.querySelector('h3').textContent;
@@ -959,7 +1489,11 @@
 
                 const exercises = day.querySelectorAll('.exercise-item');
                 if (exercises.length === 0) {
-                    content += '  Rest & Recovery Day\n';
+                    const restContent = day.querySelector('.rest-content');
+                    if (restContent) {
+                        content += '  Jour de Repos & Récupération\n';
+                        content += '  Récupération active, étirements ou cardio léger optionnel\n';
+                    }
                 } else {
                     exercises.forEach(ex => {
                         const name = ex.querySelector('.exercise-name').textContent;
@@ -970,7 +1504,16 @@
                 content += '\n';
             });
 
-            const blob = new Blob([content], { type: 'text/plain' });
+            content += '\n========================================\n';
+            content += 'Créé par BaneWorkout - Bastien Verdu\n';
+            content += 'Édition workout-brothers\n';
+            content += 'Email: therealbane666@gmail.com\n';
+            content += '========================================\n\n';
+            content += 'AVERTISSEMENT:\n';
+            content += 'Consultez un professionnel de santé avant de commencer\n';
+            content += 'tout nouveau programme d\'exercice physique.\n';
+
+            const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
             const url = window.URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;
