@@ -81,12 +81,37 @@ async function checkNoOldBranding(filePath, name) {
   }
 
   const content = fs.readFileSync(fullPath, 'utf8');
+  
+  // Patterns to check (excluding valid repository name references)
   const oldBrandingPatterns = ['BaneWorkout', 'BANE WORKOUT', 'bane-workout'];
+  const validExceptions = [
+    'github.com/therealbane666-prog/BaneWorkout', // GitHub URL
+    'BaneWorkout/', // Folder structure reference
+    'cd BaneWorkout' // Command line reference
+  ];
   
   for (const pattern of oldBrandingPatterns) {
-    if (content.includes(pattern)) {
-      checkFailed(`${name} contains old branding`, `Found "${pattern}"`);
-      return false;
+    // Find all occurrences
+    const regex = new RegExp(pattern, 'g');
+    let match;
+    while ((match = regex.exec(content)) !== null) {
+      const startPos = Math.max(0, match.index - 50);
+      const endPos = Math.min(content.length, match.index + pattern.length + 50);
+      const context = content.substring(startPos, endPos);
+      
+      // Check if this occurrence is in a valid exception
+      let isException = false;
+      for (const exception of validExceptions) {
+        if (context.includes(exception)) {
+          isException = true;
+          break;
+        }
+      }
+      
+      if (!isException) {
+        checkFailed(`${name} contains old branding`, `Found "${pattern}" at position ${match.index}`);
+        return false;
+      }
     }
   }
   
