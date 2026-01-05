@@ -4,24 +4,85 @@
 const express = require('express');
 const cors = require('cors');
 const dotenv = require('dotenv');
-const stripe = require('stripe');
 const mongoose = require('mongoose');
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
+const rateLimit = require('express-rate-limit');
 
 // Load environment variables
 dotenv.config();
 
+// Import services (with fallback if missing dependencies)
+let stripe, stripeClient, emailService, ScheduledJobs;
+try {
+  stripe = require('stripe');
+  stripeClient = process.env.STRIPE_SECRET_KEY ? stripe(process.env.STRIPE_SECRET_KEY) : null;
+  if (!stripeClient) {
+    console.log('⚠️  Stripe not configured - payment features disabled');
+  }
+} catch (err) {
+  console.log('⚠️  Stripe module not available - payment features disabled');
+}
+
+try {
+  emailService = require('./email-service');
+} catch (err) {
+  console.log('⚠️  Email service not available - email features disabled');
+  emailService = null;
+}
+
+try {
+  ScheduledJobs = require('./scheduled-jobs');
+} catch (err) {
+  console.log('⚠️  Scheduled jobs not available - automated tasks disabled');
+  ScheduledJobs = null;
+}
+
 // Initialize Express app
 const app = express();
+
+// Rate limiting
+const apiLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 100, // 100 requests per window
+  message: 'Too many requests from this IP, please try again later.',
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 5, // 5 requests per window
+  message: 'Too many authentication attempts, please try again later.',
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+const adminLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 10, // 10 requests per window
+  message: 'Too many admin requests, please try again later.',
+  standardHeaders: true,
+  legacyHeaders: false,
+});
 
 // Middleware
 app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Initialize Stripe
-const stripeClient = stripe(process.env.STRIPE_SECRET_KEY);
+// Apply rate limiting
+app.use('/api/', apiLimiter);
+app.use('/api/auth/', authLimiter);
+
+// Initialize Stripe (only if configured)
+if (!stripeClient && process.env.STRIPE_SECRET_KEY) {
+  try {
+    stripeClient = stripe(process.env.STRIPE_SECRET_KEY);
+  } catch (err) {
+    console.error('Failed to initialize Stripe:', err.message);
+  }
+}
 
 // ============================================================================
 // DATABASE SETUP
@@ -636,6 +697,16 @@ app.post('/api/orders', authenticateToken, async (req, res) => {
 
     await order.save();
 
+    // Send order confirmation email
+    if (emailService) {
+      try {
+        await emailService.sendOrderConfirmation(order, req.user.email);
+      } catch (emailError) {
+        console.error('Failed to send order confirmation email:', emailError);
+        // Don't fail the order if email fails
+      }
+    }
+
     // Clear cart
     cart.items = [];
     cart.updatedAt = Date.now();
@@ -686,6 +757,10 @@ app.put('/api/orders/:id/status', authenticateToken, async (req, res) => {
 // Create payment intent
 app.post('/api/payments/create-intent', authenticateToken, async (req, res) => {
   try {
+    if (!stripeClient) {
+      return res.status(503).json({ error: 'Payment service not configured' });
+    }
+
     const { orderId } = req.body;
 
     if (!orderId) {
@@ -730,6 +805,10 @@ app.post('/api/payments/create-intent', authenticateToken, async (req, res) => {
 // Confirm payment
 app.post('/api/payments/confirm', authenticateToken, async (req, res) => {
   try {
+    if (!stripeClient) {
+      return res.status(503).json({ error: 'Payment service not configured' });
+    }
+
     const { paymentIntentId } = req.body;
 
     if (!paymentIntentId) {
@@ -769,6 +848,10 @@ app.post('/api/payments/confirm', authenticateToken, async (req, res) => {
 
 // Webhook for Stripe events
 app.post('/api/payments/webhook', express.raw({ type: 'application/json' }), async (req, res) => {
+  if (!stripeClient) {
+    return res.status(503).json({ error: 'Payment service not configured' });
+  }
+
   const sig = req.headers['stripe-signature'];
 
   try {
@@ -818,12 +901,156 @@ app.post('/api/payments/webhook', express.raw({ type: 'application/json' }), asy
 });
 
 // ============================================================================
+// ADMIN DASHBOARD ROUTES
+// ============================================================================
+
+// Get dashboard statistics
+app.get('/api/admin/stats', authenticateToken, adminLimiter, async (req, res) => {
+  try {
+    // Get date ranges
+    const today = new Date();
+    const startOfToday = new Date(today.setHours(0, 0, 0, 0));
+    const startOfWeek = new Date(today);
+    startOfWeek.setDate(today.getDate() - 7);
+    const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+
+    // Total counts
+    const totalProducts = await Product.countDocuments();
+    const totalUsers = await User.countDocuments();
+    const totalOrders = await Order.countDocuments();
+
+    // Revenue statistics
+    const allOrders = await Order.find({ status: { $ne: 'cancelled' } });
+    const totalRevenue = allOrders.reduce((sum, order) => sum + order.totalAmount, 0);
+
+    const todayOrders = await Order.find({
+      createdAt: { $gte: startOfToday },
+      status: { $ne: 'cancelled' }
+    });
+    const todayRevenue = todayOrders.reduce((sum, order) => sum + order.totalAmount, 0);
+
+    const weekOrders = await Order.find({
+      createdAt: { $gte: startOfWeek },
+      status: { $ne: 'cancelled' }
+    });
+    const weekRevenue = weekOrders.reduce((sum, order) => sum + order.totalAmount, 0);
+
+    const monthOrders = await Order.find({
+      createdAt: { $gte: startOfMonth },
+      status: { $ne: 'cancelled' }
+    });
+    const monthRevenue = monthOrders.reduce((sum, order) => sum + order.totalAmount, 0);
+
+    // Order status breakdown
+    const ordersByStatus = await Order.aggregate([
+      { $group: { _id: '$status', count: { $sum: 1 } } }
+    ]);
+
+    // Top products
+    const topProducts = await Order.aggregate([
+      { $match: { status: { $ne: 'cancelled' } } },
+      { $unwind: '$items' },
+      {
+        $group: {
+          _id: '$items.productName',
+          totalSales: { $sum: '$items.quantity' },
+          totalRevenue: { $sum: { $multiply: ['$items.price', '$items.quantity'] } }
+        }
+      },
+      { $sort: { totalSales: -1 } },
+      { $limit: 5 }
+    ]);
+
+    // Low stock products
+    const lowStockProducts = await Product.find({
+      stock: { $lt: 10, $gt: 0 },
+      $nor: [{ stock: { $gte: 999 } }]
+    }).select('name stock category').limit(10);
+
+    // Recent orders
+    const recentOrders = await Order.find()
+      .sort({ createdAt: -1 })
+      .limit(10)
+      .populate('userId', 'username email');
+
+    res.json({
+      overview: {
+        totalProducts,
+        totalUsers,
+        totalOrders,
+        totalRevenue: totalRevenue.toFixed(2)
+      },
+      revenue: {
+        today: todayRevenue.toFixed(2),
+        week: weekRevenue.toFixed(2),
+        month: monthRevenue.toFixed(2)
+      },
+      orders: {
+        today: todayOrders.length,
+        week: weekOrders.length,
+        month: monthOrders.length,
+        byStatus: ordersByStatus
+      },
+      topProducts,
+      lowStockProducts,
+      recentOrders
+    });
+  } catch (error) {
+    console.error('Get admin stats error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Trigger manual report (admin only)
+app.post('/api/admin/trigger-report', authenticateToken, adminLimiter, async (req, res) => {
+  try {
+    if (!scheduledJobs) {
+      return res.status(503).json({ error: 'Scheduled jobs not available' });
+    }
+
+    const stats = await scheduledJobs.triggerWeeklyReport();
+    res.json({ message: 'Weekly report generated and sent', stats });
+  } catch (error) {
+    console.error('Trigger report error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Trigger stock check (admin only)
+app.post('/api/admin/trigger-stock-check', authenticateToken, adminLimiter, async (req, res) => {
+  try {
+    if (!scheduledJobs) {
+      return res.status(503).json({ error: 'Scheduled jobs not available' });
+    }
+
+    const lowStock = await scheduledJobs.triggerStockCheck();
+    res.json({ 
+      message: 'Stock check completed',
+      lowStockCount: lowStock.length,
+      products: lowStock
+    });
+  } catch (error) {
+    console.error('Trigger stock check error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// ============================================================================
 // UTILITY ROUTES
 // ============================================================================
 
 // Health check
 app.get('/api/health', (req, res) => {
-  res.json({ status: 'OK', timestamp: new Date() });
+  res.json({ 
+    status: 'OK', 
+    timestamp: new Date(),
+    services: {
+      mongodb: mongoose.connection.readyState === 1 ? 'Connected' : 'Disconnected',
+      stripe: stripeClient ? 'Configured' : 'Not configured',
+      email: emailService ? 'Configured' : 'Not configured',
+      scheduledJobs: ScheduledJobs ? 'Enabled' : 'Disabled'
+    }
+  });
 });
 
 // Get categories
@@ -853,13 +1080,91 @@ app.use((err, req, res, next) => {
 });
 
 // ============================================================================
+// SCHEDULED JOBS INITIALIZATION
+// ============================================================================
+
+let scheduledJobs = null;
+if (ScheduledJobs && mongoose.connection.readyState === 1) {
+  try {
+    scheduledJobs = new ScheduledJobs({
+      Product,
+      Order,
+      User
+    });
+    scheduledJobs.start();
+  } catch (err) {
+    console.error('Failed to start scheduled jobs:', err.message);
+  }
+}
+
+// ============================================================================
 // SERVER STARTUP
 // ============================================================================
 
 const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => {
-  console.log(`WorkoutBrothers API server running on port ${PORT}`);
-  console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
+const server = app.listen(PORT, () => {
+  console.log(`\n💪 WorkoutBrothers API Server`);
+  console.log(`=================================`);
+  console.log(`🌐 Server: http://localhost:${PORT}`);
+  console.log(`📦 Environment: ${process.env.NODE_ENV || 'development'}`);
+  console.log(`🔌 MongoDB: ${mongoose.connection.readyState === 1 ? '✅ Connected' : '⚠️  Disconnected'}`);
+  console.log(`💳 Stripe: ${stripeClient ? '✅ Configured' : '⚠️  Not configured'}`);
+  console.log(`📧 Email: ${emailService ? '✅ Configured' : '⚠️  Not configured'}`);
+  console.log(`🕐 Scheduled Jobs: ${scheduledJobs ? '✅ Running' : '⚠️  Disabled'}`);
+  console.log(`=================================\n`);
 });
+
+// ============================================================================
+// GRACEFUL SHUTDOWN
+// ============================================================================
+
+// Handle uncaught exceptions
+process.on('uncaughtException', (err) => {
+  console.error('❌ Uncaught Exception:', err);
+  // In production, you might want to restart the process
+  // For now, just log it
+});
+
+// Handle unhandled promise rejections
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('❌ Unhandled Rejection at:', promise, 'reason:', reason);
+  // In production, you might want to restart the process
+});
+
+// Graceful shutdown handler
+const gracefulShutdown = async (signal) => {
+  console.log(`\n${signal} signal received: closing HTTP server`);
+  
+  // Stop scheduled jobs
+  if (scheduledJobs) {
+    scheduledJobs.stop();
+  }
+  
+  // Close server
+  server.close(async () => {
+    console.log('HTTP server closed');
+    
+    // Close database connection
+    try {
+      await mongoose.connection.close();
+      console.log('MongoDB connection closed');
+    } catch (err) {
+      console.error('Error closing MongoDB connection:', err);
+    }
+    
+    console.log('Process terminated');
+    process.exit(0);
+  });
+  
+  // Force close after 10 seconds
+  setTimeout(() => {
+    console.error('Forced shutdown after timeout');
+    process.exit(1);
+  }, 10000);
+};
+
+// Listen for termination signals
+process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
+process.on('SIGINT', () => gracefulShutdown('SIGINT'));
 
 module.exports = app;

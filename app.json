@@ -1,31 +1,73 @@
 {
   "name": "WorkoutBrothers",
-  "description": "WorkoutBrothers - E-Commerce Platform for Fitness",
+  "description": "WorkoutBrothers - Plateforme E-Commerce pour Équipement Tactique, Nutrition & Sport",
   "repository": "https://github.com/therealbane666-prog/BaneWorkout",
-  "keywords": ["node", "express", "mongodb", "ecommerce", "stripe", "fitness"],
+  "keywords": ["node", "express", "mongodb", "ecommerce", "stripe", "fitness", "tactical"],
   "success_url": "/api/health",
-  "addons": ["mongolab: sandbox"],
   "env": {
     "NODE_ENV": {
       "description": "Node environment",
       "value": "production"
     },
-    "JWT_SECRET":  {
+    "MONGODB_URI": {
+      "description": "MongoDB Atlas connection string (mongodb+srv://...). Create free cluster at https://www.mongodb.com/cloud/atlas",
+      "required": true
+    },
+    "JWT_SECRET": {
       "description": "Secret key for JWT tokens",
       "generator": "secret"
     },
-    "STRIPE_PUBLIC_KEY": {
-      "description": "Stripe Publishable Key (pk_test_... )",
-      "required": false
-    },
     "STRIPE_SECRET_KEY": {
-      "description": "Stripe Secret Key (sk_test_...)",
+      "description": "Stripe Secret Key (sk_test_... or sk_live_...). Optional - app works without it",
       "required": false
     },
     "STRIPE_WEBHOOK_SECRET": {
-      "description": "Stripe Webhook Secret (whsec_...)",
+      "description": "Stripe Webhook Secret (whsec_...). Optional - needed for webhook events",
+      "required": false
+    },
+    "EMAIL_SERVICE": {
+      "description": "Email service: 'sendgrid', 'mailgun', or 'smtp'. Leave empty to disable emails",
+      "required": false
+    },
+    "EMAIL_FROM": {
+      "description": "Email 'From' address (e.g., noreply@workoutbrothers.com)",
+      "required": false
+    },
+    "SENDGRID_API_KEY": {
+      "description": "SendGrid API key (if using SendGrid)",
+      "required": false
+    },
+    "MAILGUN_API_KEY": {
+      "description": "Mailgun API key (if using Mailgun)",
+      "required": false
+    },
+    "MAILGUN_DOMAIN": {
+      "description": "Mailgun domain (if using Mailgun)",
+      "required": false
+    },
+    "SMTP_HOST": {
+      "description": "SMTP server host (if using SMTP)",
+      "required": false
+    },
+    "SMTP_PORT": {
+      "description": "SMTP server port (if using SMTP)",
+      "required": false
+    },
+    "SMTP_USER": {
+      "description": "SMTP username (if using SMTP)",
+      "required": false
+    },
+    "SMTP_PASS": {
+      "description": "SMTP password (if using SMTP)",
+      "required": false
+    },
+    "ADMIN_EMAIL": {
+      "description": "Admin email for reports and alerts",
       "required": false
     }
+  },
+  "scripts": {
+    "postdeploy": "npm run seed"
   },
   "buildpacks": [
     {
