@@ -8,6 +8,8 @@ const stripe = require('stripe');
 const mongoose = require('mongoose');
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
+const rateLimit = require('express-rate-limit');
+const helmet = require('helmet');
 
 // Load environment variables
 dotenv.config();
@@ -15,13 +17,73 @@ dotenv.config();
 // Initialize Express app
 const app = express();
 
+// Security: Helmet middleware
+app.use(helmet());
+
+// Rate Limiting Configuration
+const apiLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 100, // Limit each IP to 100 requests per windowMs
+  message: { error: 'Trop de requêtes, réessayez dans 15 minutes' },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 5, // Limit each IP to 5 auth requests per windowMs
+  message: { error: 'Trop de tentatives de connexion, réessayez dans 15 minutes' },
+  skipSuccessfulRequests: true,
+});
+
+// CORS Configuration for Custom Domain
+const allowedOrigins = [
+  'https://baneworkout.com',
+  'https://www.baneworkout.com',
+  'http://localhost:3000',
+  'http://localhost:5000'
+];
+
+app.use(cors({
+  origin: function(origin, callback) {
+    // Allow requests with no origin (mobile apps, curl, etc)
+    if (!origin) return callback(null, true);
+    
+    if (allowedOrigins.indexOf(origin) !== -1 || process.env.NODE_ENV !== 'production') {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
+}));
+
 // Middleware
-app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Initialize Stripe
-const stripeClient = stripe(process.env.STRIPE_SECRET_KEY);
+// Apply rate limiting to API routes
+app.use('/api/', apiLimiter);
+
+// Initialize Stripe (with error handling)
+let stripeClient = null;
+if (process.env.STRIPE_SECRET_KEY) {
+  stripeClient = stripe(process.env.STRIPE_SECRET_KEY);
+  console.log('✅ Stripe initialized');
+} else {
+  console.log('⚠️  Stripe not configured (optional)');
+}
+
+// Initialize AI Agent
+let aiAgent = null;
+try {
+  aiAgent = require('./ai-agent');
+  console.log('✅ AI Agent initialized');
+} catch (error) {
+  console.log('⚠️  AI Agent not available (optional)');
+}
 
 // ============================================================================
 // DATABASE SETUP
@@ -137,7 +199,7 @@ const authenticateToken = (req, res, next) => {
 // ============================================================================
 
 // Register
-app.post('/api/auth/register', async (req, res) => {
+app.post('/api/auth/register', authLimiter, async (req, res) => {
   try {
     const { username, email, password } = req.body;
 
@@ -186,7 +248,7 @@ app.post('/api/auth/register', async (req, res) => {
 });
 
 // Login
-app.post('/api/auth/login', async (req, res) => {
+app.post('/api/auth/login', authLimiter, async (req, res) => {
   try {
     const { email, password } = req.body;
 
@@ -686,6 +748,10 @@ app.put('/api/orders/:id/status', authenticateToken, async (req, res) => {
 // Create payment intent
 app.post('/api/payments/create-intent', authenticateToken, async (req, res) => {
   try {
+    if (!stripeClient) {
+      return res.status(503).json({ error: 'Stripe payment not configured' });
+    }
+
     const { orderId } = req.body;
 
     if (!orderId) {
@@ -730,6 +796,10 @@ app.post('/api/payments/create-intent', authenticateToken, async (req, res) => {
 // Confirm payment
 app.post('/api/payments/confirm', authenticateToken, async (req, res) => {
   try {
+    if (!stripeClient) {
+      return res.status(503).json({ error: 'Stripe payment not configured' });
+    }
+
     const { paymentIntentId } = req.body;
 
     if (!paymentIntentId) {
@@ -769,6 +839,10 @@ app.post('/api/payments/confirm', authenticateToken, async (req, res) => {
 
 // Webhook for Stripe events
 app.post('/api/payments/webhook', express.raw({ type: 'application/json' }), async (req, res) => {
+  if (!stripeClient) {
+    return res.status(503).json({ error: 'Stripe not configured' });
+  }
+
   const sig = req.headers['stripe-signature'];
 
   try {
@@ -818,6 +892,182 @@ app.post('/api/payments/webhook', express.raw({ type: 'application/json' }), asy
 });
 
 // ============================================================================
+// AI AGENT ROUTES
+// ============================================================================
+
+// AI Agent Chat - Customer Support
+app.post('/api/agent/chat', authenticateToken, async (req, res) => {
+  try {
+    if (!aiAgent) {
+      return res.status(503).json({ 
+        error: 'AI Agent not available',
+        response: 'Le support automatique n\'est pas disponible. Veuillez contacter notre équipe.'
+      });
+    }
+
+    const { message } = req.body;
+    
+    if (!message) {
+      return res.status(400).json({ error: 'Message is required' });
+    }
+
+    const response = await aiAgent.handleCustomerQuery(message, req.user.id, {
+      userEmail: req.user.email,
+      username: req.user.username
+    });
+
+    res.json(response);
+  } catch (error) {
+    console.error('AI Agent chat error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// AI Agent Recommendations
+app.get('/api/agent/recommendations', authenticateToken, async (req, res) => {
+  try {
+    if (!aiAgent) {
+      return res.status(503).json({ 
+        error: 'AI Agent not available',
+        recommendations: []
+      });
+    }
+
+    // Get user's order history
+    const orders = await Order.find({ userId: req.user.id })
+      .populate('items.productId')
+      .limit(10);
+
+    const recommendations = await aiAgent.recommendProducts(
+      req.user,
+      orders,
+      parseInt(req.query.limit) || 5
+    );
+
+    res.json(recommendations);
+  } catch (error) {
+    console.error('AI Agent recommendations error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// AI Agent Inventory Management (Admin only - simplified auth check)
+app.get('/api/agent/inventory', authenticateToken, async (req, res) => {
+  try {
+    if (!aiAgent) {
+      return res.status(503).json({ 
+        error: 'AI Agent not available'
+      });
+    }
+
+    const products = await Product.find({});
+    const salesData = []; // Would be populated from actual sales analytics
+
+    const inventoryReport = await aiAgent.manageInventory(products, salesData);
+
+    res.json(inventoryReport);
+  } catch (error) {
+    console.error('AI Agent inventory error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// AI Agent Insights (Admin only - simplified auth check)
+app.get('/api/agent/insights', authenticateToken, async (req, res) => {
+  try {
+    if (!aiAgent) {
+      return res.status(503).json({ 
+        error: 'AI Agent not available'
+      });
+    }
+
+    const timeframe = req.query.timeframe || '30d';
+    
+    // Get recent orders for analysis
+    const orders = await Order.find({
+      createdAt: { $gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000) }
+    });
+
+    const salesData = orders.map(order => ({
+      total: order.totalAmount,
+      date: order.createdAt,
+      items: order.items.length
+    }));
+
+    const insights = await aiAgent.generateInsights(salesData, timeframe);
+
+    res.json(insights);
+  } catch (error) {
+    console.error('AI Agent insights error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// ============================================================================
+// ADMIN ROUTES
+// ============================================================================
+
+// Admin Stats Dashboard
+app.get('/api/admin/stats', authenticateToken, async (req, res) => {
+  try {
+    const now = new Date();
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const weekAgo = new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000);
+    const monthAgo = new Date(today.getTime() - 30 * 24 * 60 * 60 * 1000);
+
+    const stats = {
+      overview: {
+        totalProducts: await Product.countDocuments(),
+        totalOrders: await Order.countDocuments(),
+        totalRevenue: await Order.aggregate([
+          { $match: { status: 'paid' } },
+          { $group: { _id: null, total: { $sum: '$totalAmount' } } }
+        ]).then(result => result[0]?.total || 0),
+        totalUsers: await User.countDocuments(),
+      },
+      revenue: {
+        today: await Order.aggregate([
+          { $match: { createdAt: { $gte: today }, status: 'paid' } },
+          { $group: { _id: null, total: { $sum: '$totalAmount' } } }
+        ]).then(result => result[0]?.total || 0),
+        week: await Order.aggregate([
+          { $match: { createdAt: { $gte: weekAgo }, status: 'paid' } },
+          { $group: { _id: null, total: { $sum: '$totalAmount' } } }
+        ]).then(result => result[0]?.total || 0),
+        month: await Order.aggregate([
+          { $match: { createdAt: { $gte: monthAgo }, status: 'paid' } },
+          { $group: { _id: null, total: { $sum: '$totalAmount' } } }
+        ]).then(result => result[0]?.total || 0),
+      },
+      topProducts: await Product.find({}).sort({ rating: -1 }).limit(10),
+      recentOrders: await Order.find({}).sort({ createdAt: -1 }).limit(20).populate('userId', 'username email'),
+      lowStockProducts: await Product.find({ stock: { $lt: 10 } }).sort({ stock: 1 }),
+    };
+
+    // Add AI insights if available
+    if (aiAgent) {
+      try {
+        const orders = await Order.find({ createdAt: { $gte: monthAgo } });
+        const salesData = orders.map(order => ({
+          total: order.totalAmount,
+          date: order.createdAt,
+          items: order.items.length
+        }));
+        const insights = await aiAgent.generateInsights(salesData, '30d');
+        stats.aiInsights = insights.insights;
+      } catch (err) {
+        console.error('Error getting AI insights:', err);
+      }
+    }
+
+    res.json(stats);
+  } catch (error) {
+    console.error('Get admin stats error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// ============================================================================
 // UTILITY ROUTES
 // ============================================================================
 
@@ -853,13 +1103,59 @@ app.use((err, req, res, next) => {
 });
 
 // ============================================================================
-// SERVER STARTUP
+// SERVER STARTUP & GRACEFUL SHUTDOWN
 // ============================================================================
 
 const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => {
-  console.log(`WorkoutBrothers API server running on port ${PORT}`);
-  console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
+const server = app.listen(PORT, () => {
+  console.log(`\n🚀 WorkoutBrothers API Server`);
+  console.log(`📍 Port: ${PORT}`);
+  console.log(`🌍 Environment: ${process.env.NODE_ENV || 'development'}`);
+  console.log(`🎯 Domain: ${process.env.DOMAIN || 'localhost'}`);
+  console.log(`✅ Server is running!\n`);
+});
+
+// Graceful Shutdown
+async function gracefulShutdown(signal) {
+  console.log(`\n⏸️  ${signal} received. Starting graceful shutdown...`);
+  
+  // Stop accepting new connections
+  server.close(async () => {
+    console.log('🔒 HTTP server closed');
+    
+    // Close database connection
+    try {
+      await mongoose.connection.close();
+      console.log('🔌 MongoDB connection closed');
+    } catch (err) {
+      console.error('Error closing MongoDB connection:', err);
+    }
+    
+    console.log('✅ Graceful shutdown completed');
+    process.exit(0);
+  });
+  
+  // Force shutdown after 10 seconds
+  setTimeout(() => {
+    console.error('⚠️  Forced shutdown after timeout');
+    process.exit(1);
+  }, 10000);
+}
+
+// Handle shutdown signals
+process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
+process.on('SIGINT', () => gracefulShutdown('SIGINT'));
+
+// Handle uncaught exceptions
+process.on('uncaughtException', (error) => {
+  console.error('💥 Uncaught Exception:', error);
+  gracefulShutdown('UNCAUGHT_EXCEPTION');
+});
+
+// Handle unhandled promise rejections
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('💥 Unhandled Rejection at:', promise, 'reason:', reason);
+  gracefulShutdown('UNHANDLED_REJECTION');
 });
 
 module.exports = app;
