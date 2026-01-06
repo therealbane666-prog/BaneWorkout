@@ -1085,7 +1085,11 @@ app.use((err, req, res, next) => {
 // ============================================================================
 
 const initializeScheduledJobs = () => {
-  if (scheduledJobs || !ScheduledJobs || mongoose.connection.readyState !== 1) {
+  if (
+    scheduledJobs ||
+    !ScheduledJobs ||
+    mongoose.connection.readyState !== mongoose.STATES.connected
+  ) {
     return;
   }
   try {
@@ -1101,6 +1105,12 @@ const initializeScheduledJobs = () => {
 };
 
 mongoose.connection.on('connected', initializeScheduledJobs);
+mongoose.connection.on('disconnected', () => {
+  if (scheduledJobs) {
+    scheduledJobs.stop();
+    scheduledJobs = null;
+  }
+});
 initializeScheduledJobs();
 
 // ============================================================================
@@ -1113,7 +1123,7 @@ const server = app.listen(PORT, () => {
   console.log(`=================================`);
   console.log(`🌐 Server: http://localhost:${PORT}`);
   console.log(`📦 Environment: ${process.env.NODE_ENV || 'development'}`);
-  console.log(`🔌 MongoDB: ${mongoose.connection.readyState === 1 ? '✅ Connected' : '⚠️  Disconnected'}`);
+  console.log(`🔌 MongoDB: ${mongoose.connection.readyState === mongoose.STATES.connected ? '✅ Connected' : '⚠️  Disconnected'}`);
   console.log(`💳 Stripe: ${stripeClient ? '✅ Configured' : '⚠️  Not configured'}`);
   console.log(`📧 Email: ${emailService ? '✅ Configured' : '⚠️  Not configured'}`);
   console.log(`🕐 Scheduled Jobs: ${scheduledJobs ? '✅ Running' : '⚠️  Disabled'}`);
