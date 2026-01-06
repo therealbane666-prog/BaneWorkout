@@ -1085,13 +1085,13 @@ app.use((err, req, res, next) => {
 // ============================================================================
 
 const initializeScheduledJobs = () => {
-  if (
-    scheduledJobs ||
-    !ScheduledJobs ||
-    mongoose.connection.readyState !== mongoose.STATES.connected
-  ) {
-    return;
-  }
+  const canInitialize =
+    !scheduledJobs &&
+    ScheduledJobs &&
+    mongoose.connection.readyState === mongoose.STATES.connected;
+
+  if (!canInitialize) return;
+
   try {
     scheduledJobs = new ScheduledJobs({
       Product,
@@ -1116,9 +1116,6 @@ mongoose.connection.on('disconnected', () => {
     scheduledJobs = null;
   }
 });
-if (mongoose.connection.readyState === mongoose.STATES.connected) {
-  initializeScheduledJobs();
-}
 
 // ============================================================================
 // SERVER STARTUP
