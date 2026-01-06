@@ -1087,8 +1087,7 @@ app.use((err, req, res, next) => {
 const initializeScheduledJobs = () => {
   const canInitialize =
     !scheduledJobs &&
-    ScheduledJobs &&
-    mongoose.connection.readyState === mongoose.STATES.connected;
+    ScheduledJobs;
 
   if (!canInitialize) return;
 
@@ -1104,11 +1103,13 @@ const initializeScheduledJobs = () => {
   }
 };
 
-mongoose.connection.on('connected', initializeScheduledJobs);
-mongoose.connection.on('reconnected', initializeScheduledJobs);
+['connected', 'reconnected'].forEach(event => {
+  mongoose.connection.on(event, initializeScheduledJobs);
+});
 mongoose.connection.on('disconnected', () => {
   if (scheduledJobs) {
     try {
+      // Stop running cron jobs while the database is unavailable
       scheduledJobs.stop();
     } catch (err) {
       console.error('Failed to stop scheduled jobs:', err.message);
