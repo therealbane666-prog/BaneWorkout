@@ -1090,7 +1090,14 @@ const initializeScheduledJobs = () => {
     ScheduledJobs &&
     mongoose.connection.readyState === mongoose.STATES.connected;
 
-  if (!canInitialize) return;
+  if (!canInitialize) {
+    console.log('Skipping scheduled jobs initialization', {
+      hasInstance: !!scheduledJobs,
+      hasScheduler: !!ScheduledJobs,
+      readyState: mongoose.connection.readyState
+    });
+    return;
+  }
 
   try {
     scheduledJobs = new ScheduledJobs({
@@ -1104,6 +1111,7 @@ const initializeScheduledJobs = () => {
   }
 };
 
+// Register handlers after mongoose.connect to catch initial and subsequent connections
 mongoose.connection.on('connected', initializeScheduledJobs);
 mongoose.connection.on('reconnected', initializeScheduledJobs);
 mongoose.connection.on('disconnected', () => {
