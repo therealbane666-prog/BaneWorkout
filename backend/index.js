@@ -1046,7 +1046,7 @@ app.get('/api/health', (req, res) => {
     status: 'OK', 
     timestamp: new Date(),
     services: {
-      mongodb: mongoose.connection.readyState === 1 ? 'Connected' : 'Disconnected',
+      mongodb: mongoose.connection.readyState === mongoose.STATES.connected ? 'Connected' : 'Disconnected',
       stripe: stripeClient ? 'Configured' : 'Not configured',
       email: emailService ? 'Configured' : 'Not configured',
       scheduledJobs: ScheduledJobs ? 'Enabled' : 'Disabled'
