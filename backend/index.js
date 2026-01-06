@@ -14,6 +14,7 @@ dotenv.config();
 
 // Import services (with fallback if missing dependencies)
 let stripe, stripeClient, emailService, ScheduledJobs;
+// Shared scheduler instance (set when MongoDB is connected)
 let scheduledJobs = null;
 try {
   stripe = require('stripe');
@@ -1112,8 +1113,8 @@ const initializeScheduledJobs = () => {
 };
 
 // Register handlers after mongoose.connect to catch initial and subsequent connections
-mongoose.connection.on('connected', initializeScheduledJobs);
-mongoose.connection.on('reconnected', initializeScheduledJobs);
+mongoose.connection.on('connected', initializeScheduledJobs);   // first successful connection
+mongoose.connection.on('reconnected', initializeScheduledJobs); // database reconnection
 mongoose.connection.on('disconnected', () => {
   if (scheduledJobs) {
     try {
