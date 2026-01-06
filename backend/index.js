@@ -14,6 +14,7 @@ dotenv.config();
 
 // Import services (with fallback if missing dependencies)
 let stripe, stripeClient, emailService, ScheduledJobs;
+let scheduledJobs = null;
 try {
   stripe = require('stripe');
   stripeClient = process.env.STRIPE_SECRET_KEY ? stripe(process.env.STRIPE_SECRET_KEY) : null;
@@ -1083,8 +1084,10 @@ app.use((err, req, res, next) => {
 // SCHEDULED JOBS INITIALIZATION
 // ============================================================================
 
-let scheduledJobs = null;
-if (ScheduledJobs && mongoose.connection.readyState === 1) {
+const initializeScheduledJobs = () => {
+  if (scheduledJobs || !ScheduledJobs || mongoose.connection.readyState !== 1) {
+    return;
+  }
   try {
     scheduledJobs = new ScheduledJobs({
       Product,
@@ -1095,7 +1098,10 @@ if (ScheduledJobs && mongoose.connection.readyState === 1) {
   } catch (err) {
     console.error('Failed to start scheduled jobs:', err.message);
   }
-}
+};
+
+mongoose.connection.on('connected', initializeScheduledJobs);
+initializeScheduledJobs();
 
 // ============================================================================
 // SERVER STARTUP
