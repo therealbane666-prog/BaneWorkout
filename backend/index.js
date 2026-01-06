@@ -1087,7 +1087,8 @@ app.use((err, req, res, next) => {
 const initializeScheduledJobs = () => {
   const canInitialize =
     !scheduledJobs &&
-    ScheduledJobs;
+    ScheduledJobs &&
+    mongoose.connection.readyState === mongoose.STATES.connected;
 
   if (!canInitialize) return;
 
@@ -1103,9 +1104,8 @@ const initializeScheduledJobs = () => {
   }
 };
 
-['connected', 'reconnected'].forEach(event => {
-  mongoose.connection.on(event, initializeScheduledJobs);
-});
+mongoose.connection.on('connected', initializeScheduledJobs);
+mongoose.connection.on('reconnected', initializeScheduledJobs);
 mongoose.connection.on('disconnected', () => {
   if (scheduledJobs) {
     try {
