@@ -1105,9 +1105,14 @@ const initializeScheduledJobs = () => {
 };
 
 mongoose.connection.on('connected', initializeScheduledJobs);
+mongoose.connection.on('reconnected', initializeScheduledJobs);
 mongoose.connection.on('disconnected', () => {
   if (scheduledJobs) {
-    scheduledJobs.stop();
+    try {
+      scheduledJobs.stop();
+    } catch (err) {
+      console.error('Failed to stop scheduled jobs:', err.message);
+    }
     scheduledJobs = null;
   }
 });
