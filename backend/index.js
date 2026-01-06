@@ -1111,7 +1111,9 @@ mongoose.connection.on('disconnected', () => {
     scheduledJobs = null;
   }
 });
-initializeScheduledJobs();
+if (mongoose.connection.readyState === mongoose.STATES.connected) {
+  initializeScheduledJobs();
+}
 
 // ============================================================================
 // SERVER STARTUP
