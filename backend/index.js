@@ -14,6 +14,8 @@ dotenv.config();
 
 // Import services (with fallback if missing dependencies)
 let stripe, stripeClient, emailService, ScheduledJobs;
+// Shared scheduler instance (set when MongoDB is connected)
+let scheduledJobs = null;
 try {
   stripe = require('stripe');
   stripeClient = process.env.STRIPE_SECRET_KEY ? stripe(process.env.STRIPE_SECRET_KEY) : null;
@@ -1045,7 +1047,7 @@ app.get('/api/health', (req, res) => {
     status: 'OK', 
     timestamp: new Date(),
     services: {
-      mongodb: mongoose.connection.readyState === 1 ? 'Connected' : 'Disconnected',
+      mongodb: mongoose.connection.readyState === mongoose.STATES.connected ? 'Connected' : 'Disconnected',
       stripe: stripeClient ? 'Configured' : 'Not configured',
       email: emailService ? 'Configured' : 'Not configured',
       scheduledJobs: ScheduledJobs ? 'Enabled' : 'Disabled'
@@ -1083,8 +1085,21 @@ app.use((err, req, res, next) => {
 // SCHEDULED JOBS INITIALIZATION
 // ============================================================================
 
-let scheduledJobs = null;
-if (ScheduledJobs && mongoose.connection.readyState === 1) {
+const initializeScheduledJobs = () => {
+  const canInitialize =
+    !scheduledJobs &&
+    ScheduledJobs &&
+    mongoose.connection.readyState === mongoose.STATES.connected;
+
+  if (!canInitialize) {
+    console.log('Skipping scheduled jobs initialization', {
+      hasInstance: !!scheduledJobs,
+      hasScheduler: !!ScheduledJobs,
+      readyState: mongoose.connection.readyState
+    });
+    return;
+  }
+
   try {
     scheduledJobs = new ScheduledJobs({
       Product,
@@ -1095,7 +1110,22 @@ if (ScheduledJobs && mongoose.connection.readyState === 1) {
   } catch (err) {
     console.error('Failed to start scheduled jobs:', err.message);
   }
-}
+};
+
+// Register handlers after mongoose.connect to catch initial and subsequent connections
+mongoose.connection.on('connected', initializeScheduledJobs);   // first successful connection
+mongoose.connection.on('reconnected', initializeScheduledJobs); // database reconnection
+mongoose.connection.on('disconnected', () => {
+  if (scheduledJobs) {
+    try {
+      // Stop running cron jobs while the database is unavailable
+      scheduledJobs.stop();
+    } catch (err) {
+      console.error('Failed to stop scheduled jobs:', err.message);
+    }
+    scheduledJobs = null;
+  }
+});
 
 // ============================================================================
 // SERVER STARTUP
@@ -1107,7 +1137,7 @@ const server = app.listen(PORT, () => {
   console.log(`=================================`);
   console.log(`🌐 Server: http://localhost:${PORT}`);
   console.log(`📦 Environment: ${process.env.NODE_ENV || 'development'}`);
-  console.log(`🔌 MongoDB: ${mongoose.connection.readyState === 1 ? '✅ Connected' : '⚠️  Disconnected'}`);
+  console.log(`🔌 MongoDB: ${mongoose.connection.readyState === mongoose.STATES.connected ? '✅ Connected' : '⚠️  Disconnected'}`);
   console.log(`💳 Stripe: ${stripeClient ? '✅ Configured' : '⚠️  Not configured'}`);
   console.log(`📧 Email: ${emailService ? '✅ Configured' : '⚠️  Not configured'}`);
   console.log(`🕐 Scheduled Jobs: ${scheduledJobs ? '✅ Running' : '⚠️  Disabled'}`);
