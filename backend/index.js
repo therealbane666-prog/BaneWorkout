@@ -12,7 +12,7 @@ const rateLimit = require('express-rate-limit');
 
 // Load environment variables
 dotenv.config();
-dotenv.config({ path: path.join(__dirname, '.env') });
+dotenv.config({ path: path.join(__dirname, '.env'), override: false });
 
 // Import services (with fallback if missing dependencies)
 let stripe, stripeClient, emailService, ScheduledJobs;
