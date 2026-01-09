@@ -10,7 +10,7 @@ const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
 const rateLimit = require('express-rate-limit');
 
-// Load environment variables
+// Load environment variables (root .env first, backend/.env as documented fallback)
 dotenv.config();
 dotenv.config({ path: path.join(__dirname, '.env'), override: false });
 
