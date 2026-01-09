@@ -2,6 +2,7 @@
 // Complete Express server with products, shopping cart, orders, and Stripe payment integration
 
 const express = require('express');
+const path = require('path');
 const cors = require('cors');
 const dotenv = require('dotenv');
 const mongoose = require('mongoose');
@@ -11,6 +12,7 @@ const rateLimit = require('express-rate-limit');
 
 // Load environment variables
 dotenv.config();
+dotenv.config({ path: path.join(__dirname, '.env') });
 
 // Import services (with fallback if missing dependencies)
 let stripe, stripeClient, emailService, ScheduledJobs;
