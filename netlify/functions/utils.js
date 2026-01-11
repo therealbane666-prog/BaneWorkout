@@ -114,8 +114,14 @@ function authenticateToken(authHeader) {
     return { error: 'Access token required', statusCode: 401 };
   }
 
+  // Ensure JWT_SECRET is configured
+  if (!process.env.JWT_SECRET) {
+    console.error('CRITICAL: JWT_SECRET environment variable is not set');
+    return { error: 'Server configuration error', statusCode: 500 };
+  }
+
   try {
-    const user = jwt.verify(token, process.env.JWT_SECRET || 'your-secret-key');
+    const user = jwt.verify(token, process.env.JWT_SECRET);
     return { user };
   } catch (err) {
     return { error: 'Invalid or expired token', statusCode: 403 };

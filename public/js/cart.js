@@ -130,7 +130,8 @@ async function checkout() {
         return;
     }
     
-    // Simple checkout - in real app, would have shipping form
+    // TODO: Replace with actual shipping address form
+    // This is a placeholder for demonstration purposes
     const shippingAddress = {
         street: '123 Rue Example',
         city: 'Paris',

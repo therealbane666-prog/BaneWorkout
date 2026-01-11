@@ -40,9 +40,13 @@ exports.handler = async (event, context) => {
     await user.save();
 
     // Create JWT token
+    if (!process.env.JWT_SECRET) {
+      return createResponse(500, { error: 'Server configuration error' });
+    }
+    
     const token = jwt.sign(
       { id: user._id, username: user.username, email: user.email },
-      process.env.JWT_SECRET || 'your-secret-key',
+      process.env.JWT_SECRET,
       { expiresIn: '24h' }
     );
 

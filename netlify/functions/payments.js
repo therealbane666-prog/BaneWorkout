@@ -49,9 +49,11 @@ exports.handler = async (event, context) => {
       }
 
       // Create Stripe payment intent
+      // Note: Currency should match the currency displayed in the frontend (currently EUR)
+      // TODO: Make currency configurable via environment variable
       const paymentIntent = await stripeClient.paymentIntents.create({
         amount: Math.round(order.totalAmount * 100), // Convert to cents
-        currency: 'usd',
+        currency: 'eur', // Changed from 'usd' to match frontend currency
         metadata: {
           orderId: order._id.toString(),
           userId: authResult.user.id,
