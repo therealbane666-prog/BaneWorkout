@@ -1,0 +1,152 @@
+/* WorkoutBrothers - Responsive Styles */
+
+/* Tablet Screens */
+@media (max-width: 1024px) {
+    .container {
+        padding: 0 20px;
+    }
+    
+    header h1 {
+        font-size: 2.5em;
+    }
+    
+    .main-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .products-grid {
+        grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    }
+}
+
+/* Mobile Screens */
+@media (max-width: 768px) {
+    body {
+        padding: 10px;
+    }
+    
+    header h1 {
+        font-size: 2em;
+    }
+    
+    header p {
+        font-size: 1em;
+    }
+    
+    .main-nav {
+        flex-direction: column;
+        align-items: center;
+        gap: 10px;
+    }
+    
+    .nav-link {
+        width: 100%;
+        max-width: 300px;
+        text-align: center;
+    }
+    
+    .main-grid {
+        grid-template-columns: 1fr;
+        gap: 20px;
+    }
+    
+    .card {
+        padding: 20px;
+    }
+    
+    .card h2 {
+        font-size: 1.3em;
+    }
+    
+    .workout-schedule {
+        grid-template-columns: 1fr;
+    }
+    
+    .button-group {
+        flex-direction: column;
+    }
+    
+    button {
+        width: 100%;
+    }
+    
+    .checkbox-group {
+        grid-template-columns: repeat(2, 1fr);
+    }
+    
+    .summary-stats {
+        grid-template-columns: repeat(2, 1fr);
+    }
+    
+    .stat-box .value {
+        font-size: 1.5em;
+    }
+    
+    .products-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .copy-feedback {
+        left: 10px;
+        right: 10px;
+        top: 10px;
+    }
+}
+
+/* Small Mobile Screens */
+@media (max-width: 480px) {
+    header h1 {
+        font-size: 1.5em;
+    }
+    
+    .card {
+        padding: 15px;
+    }
+    
+    .checkbox-group {
+        grid-template-columns: 1fr;
+    }
+    
+    .summary-stats {
+        grid-template-columns: 1fr;
+    }
+    
+    input[type="number"],
+    input[type="text"],
+    input[type="email"],
+    input[type="password"],
+    select {
+        font-size: 16px; /* Prevent zoom on iOS */
+    }
+}
+
+/* Print Styles */
+@media print {
+    body {
+        background: white;
+        padding: 0;
+    }
+    
+    header,
+    .main-nav,
+    .button-group,
+    .form-group,
+    .copy-feedback {
+        display: none;
+    }
+    
+    .card {
+        box-shadow: none;
+        border: 1px solid #ccc;
+        page-break-inside: avoid;
+    }
+    
+    .workout-day {
+        page-break-inside: avoid;
+    }
+}
+
+/* Dark Mode Support (Optional) */
+@media (prefers-color-scheme: dark) {
+    /* Add dark mode styles if desired */
+}

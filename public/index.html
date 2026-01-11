@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="WorkoutBrothers - Plateforme E-Commerce pour Équipement Tactique, Nutrition & Sport. Générateur de programmes d'entraînement personnalisés.">
+    <meta name="keywords" content="fitness, workout, équipement tactique, nutrition, sport, e-commerce">
+    <title>WorkoutBrothers - Fitness & Équipement Tactique</title>
+    
+    <!-- CSS -->
+    <link rel="stylesheet" href="/css/style.css">
+    <link rel="stylesheet" href="/css/responsive.css">
+    
+    <!-- Preconnect for performance -->
+    <link rel="preconnect" href="https://js.stripe.com">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>💪 WorkoutBrothers</h1>
+            <p>Préparation Physique & Mentale</p>
+            <nav class="main-nav">
+                <a href="#workout-generator" class="nav-link active">Générateur d'Entraînement</a>
+                <a href="#products" class="nav-link">Produits</a>
+                <a href="#cart" class="nav-link">Panier <span id="cart-count" class="cart-badge">0</span></a>
+                <a href="#auth" class="nav-link" id="auth-link">Connexion</a>
+            </nav>
+        </header>
+
+        <!-- Workout Generator Section -->
+        <section id="workout-generator" class="section active">
+            <div class="main-grid">
+                <!-- Input Form -->
+                <div class="card">
+                    <h2>Configuration du Programme</h2>
+                    
+                    <div class="error" id="errorMessage"></div>
+                    <div class="success" id="successMessage"></div>
+
+                    <form id="workoutForm">
+                        <div class="form-group">
+                            <label for="weight">Poids du Corps (lbs)</label>
+                            <input type="number" id="weight" name="weight" min="50" max="500" step="0.5" placeholder="ex: 180" required>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="goal">Objectif Principal</label>
+                            <select id="goal" name="goal" required>
+                                <option value="">Sélectionner un objectif...</option>
+                                <option value="strength">Force & Puissance</option>
+                                <option value="muscle">Prise de Muscle (Hypertrophie)</option>
+                                <option value="endurance">Endurance & Stamina</option>
+                                <option value="weight-loss">Perte de Poids & Tonification</option>
+                                <option value="balanced">Fitness Équilibré</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="experience">Niveau d'Expérience</label>
+                            <select id="experience" name="experience" required>
+                                <option value="">Sélectionner le niveau...</option>
+                                <option value="beginner">Débutant (0-6 mois)</option>
+                                <option value="intermediate">Intermédiaire (6-2 ans)</option>
+                                <option value="advanced">Avancé (2+ ans)</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Jours d'Entraînement Disponibles</label>
+                            <div class="checkbox-group">
+                                <div class="checkbox-item">
+                                    <input type="checkbox" id="mon" name="days" value="Lundi">
+                                    <label for="mon">Lundi</label>
+                                </div>
+                                <div class="checkbox-item">
+                                    <input type="checkbox" id="tue" name="days" value="Mardi">
+                                    <label for="tue">Mardi</label>
+                                </div>
+                                <div class="checkbox-item">
+                                    <input type="checkbox" id="wed" name="days" value="Mercredi">
+                                    <label for="wed">Mercredi</label>
+                                </div>
+                                <div class="checkbox-item">
+                                    <input type="checkbox" id="thu" name="days" value="Jeudi">
+                                    <label for="thu">Jeudi</label>
+                                </div>
+                                <div class="checkbox-item">
+                                    <input type="checkbox" id="fri" name="days" value="Vendredi">
+                                    <label for="fri">Vendredi</label>
+                                </div>
+                                <div class="checkbox-item">
+                                    <input type="checkbox" id="sat" name="days" value="Samedi">
+                                    <label for="sat">Samedi</label>
+                                </div>
+                                <div class="checkbox-item">
+                                    <input type="checkbox" id="sun" name="days" value="Dimanche">
+                                    <label for="sun">Dimanche</label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="sessionDuration">Durée de Séance (minutes)</label>
+                            <input type="number" id="sessionDuration" name="sessionDuration" min="20" max="180" step="5" value="60" required>
+                        </div>
+
+                        <div class="button-group">
+                            <button type="submit" class="btn-generate">Générer le Programme</button>
+                            <button type="reset" class="btn-reset">Réinitialiser</button>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- Program Overview -->
+                <div class="card">
+                    <h2>Résumé du Programme</h2>
+                    <div id="programInfo" style="color: #999; text-align: center; padding: 40px 0;">
+                        <p>Remplissez le formulaire de configuration et cliquez sur "Générer le Programme" pour créer votre plan de fitness personnalisé.</p>
+                    </div>
+                    <div class="summary-stats" id="summaryStats" style="display: none;">
+                        <div class="stat-box">
+                            <div class="value" id="totalDays">0</div>
+                            <div class="label">Jours d'Entraînement</div>
+                        </div>
+                        <div class="stat-box">
+                            <div class="value" id="totalExercises">0</div>
+                            <div class="label">Total Exercices</div>
+                        </div>
+                        <div class="stat-box">
+                            <div class="value" id="totalVolume">0</div>
+                            <div class="label">Total Séries</div>
+                        </div>
+                        <div class="stat-box">
+                            <div class="value" id="weeklyHours">0</div>
+                            <div class="label">Heures Hebdo</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Results Section -->
+            <div class="results-container" id="resultsContainer">
+                <div class="card">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                        <h2 style="margin: 0;">Votre Programme d'Entraînement Personnalisé</h2>
+                        <div class="button-group" style="margin: 0; flex: 0;">
+                            <button class="btn-copy" onclick="copyToClipboard()">📋 Copier</button>
+                            <button class="btn-download" onclick="downloadProgram()">⬇️ Télécharger</button>
+                        </div>
+                    </div>
+                    
+                    <div class="workout-schedule" id="workoutSchedule"></div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Products Section -->
+        <section id="products" class="section">
+            <div class="card">
+                <h2>🛒 Nos Produits</h2>
+                <div id="products-list" class="products-grid">
+                    <p style="text-align: center; color: #999;">Chargement des produits...</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Cart Section -->
+        <section id="cart" class="section">
+            <div class="card">
+                <h2>🛒 Votre Panier</h2>
+                <div id="cart-items">
+                    <p style="text-align: center; color: #999;">Votre panier est vide</p>
+                </div>
+                <div id="cart-total" style="display: none;">
+                    <h3>Total: <span id="total-amount">0.00</span> €</h3>
+                    <button class="btn-generate" onclick="checkout()">Commander</button>
+                </div>
+            </div>
+        </section>
+
+        <!-- Auth Section -->
+        <section id="auth" class="section">
+            <div class="card">
+                <h2>Connexion / Inscription</h2>
+                <div id="auth-forms">
+                    <!-- Forms will be loaded by JS -->
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <div class="copy-feedback" id="copyFeedback">✓ Programme copié dans le presse-papier!</div>
+
+    <!-- Scripts -->
+    <script src="/js/workout-database.js"></script>
+    <script src="/js/utils.js"></script>
+    <script src="/js/api.js"></script>
+    <script src="/js/auth.js"></script>
+    <script src="/js/products.js"></script>
+    <script src="/js/cart.js"></script>
+    <script src="/js/app.js"></script>
+</body>
+</html>
