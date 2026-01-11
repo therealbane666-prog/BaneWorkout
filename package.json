@@ -1,13 +1,17 @@
 {
   "name": "WorkoutBrothers",
-  "version": "1.0.0",
-  "description": "WorkoutBrothers - Plateforme E-Commerce pour Équipement Tactique, Nutrition & Sport",
-  "main": "backend/index.js",
+  "version": "2.0.0",
+  "description": "WorkoutBrothers - Plateforme E-Commerce pour Équipement Tactique, Nutrition & Sport - Netlify Edition",
+  "main": "netlify/functions/utils.js",
   "scripts": {
-    "start": "node backend/index.js",
-    "dev": "nodemon backend/index.js",
+    "start": "netlify dev",
+    "build": "echo 'No build required for static site'",
+    "dev": "netlify dev",
+    "deploy": "netlify deploy --prod",
     "seed": "node backend/seed-products.js",
-    "check-config": "node -e \"console.log('Environment:', process.env.NODE_ENV || 'development'); console.log('MongoDB:', process.env.MONGODB_URI ? 'Configured' : 'Not configured'); console.log('Stripe:', process.env.STRIPE_SECRET_KEY ? 'Configured' : 'Not configured');\""
+    "check-config": "node -e \"console.log('Environment:', process.env.NODE_ENV || 'development'); console.log('MongoDB:', process.env.MONGODB_URI ? 'Configured' : 'Not configured'); console.log('Stripe:', process.env.STRIPE_SECRET_KEY ? 'Configured' : 'Not configured');\"",
+    "legacy:start": "node backend/index.js",
+    "legacy:dev": "nodemon backend/index.js"
   },
   "keywords": [
     "fitness",
