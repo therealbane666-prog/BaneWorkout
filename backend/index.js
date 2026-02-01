@@ -914,64 +914,72 @@ app.get('/api/admin/stats', authenticateToken, adminLimiter, async (req, res) =>
     startOfWeek.setDate(today.getDate() - 7);
     const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
 
-    // Total counts
-    const totalProducts = await Product.countDocuments();
-    const totalUsers = await User.countDocuments();
-    const totalOrders = await Order.countDocuments();
-
-    // Revenue statistics
-    const allOrders = await Order.find({ status: { $ne: 'cancelled' } });
-    const totalRevenue = allOrders.reduce((sum, order) => sum + order.totalAmount, 0);
-
-    const todayOrders = await Order.find({
-      createdAt: { $gte: startOfToday },
-      status: { $ne: 'cancelled' }
-    });
-    const todayRevenue = todayOrders.reduce((sum, order) => sum + order.totalAmount, 0);
-
-    const weekOrders = await Order.find({
-      createdAt: { $gte: startOfWeek },
-      status: { $ne: 'cancelled' }
-    });
-    const weekRevenue = weekOrders.reduce((sum, order) => sum + order.totalAmount, 0);
-
-    const monthOrders = await Order.find({
-      createdAt: { $gte: startOfMonth },
-      status: { $ne: 'cancelled' }
-    });
-    const monthRevenue = monthOrders.reduce((sum, order) => sum + order.totalAmount, 0);
-
-    // Order status breakdown
-    const ordersByStatus = await Order.aggregate([
-      { $group: { _id: '$status', count: { $sum: 1 } } }
-    ]);
-
-    // Top products
-    const topProducts = await Order.aggregate([
-      { $match: { status: { $ne: 'cancelled' } } },
-      { $unwind: '$items' },
-      {
-        $group: {
-          _id: '$items.productName',
-          totalSales: { $sum: '$items.quantity' },
-          totalRevenue: { $sum: { $multiply: ['$items.price', '$items.quantity'] } }
+    const [
+      [totalProducts, totalUsers, totalOrders],
+      ordersByStatus,
+      topProducts,
+      lowStockProducts,
+      recentOrders,
+      revenueBuckets
+    ] = await Promise.all([
+      Promise.all([
+        Product.countDocuments(),
+        User.countDocuments(),
+        Order.countDocuments()
+      ]),
+      Order.aggregate([
+        { $group: { _id: '$status', count: { $sum: 1 } } }
+      ]),
+      Order.aggregate([
+        { $match: { status: { $ne: 'cancelled' } } },
+        { $unwind: '$items' },
+        {
+          $group: {
+            _id: '$items.productName',
+            totalSales: { $sum: '$items.quantity' },
+            totalRevenue: { $sum: { $multiply: ['$items.price', '$items.quantity'] } }
+          }
+        },
+        { $sort: { totalSales: -1 } },
+        { $limit: 5 }
+      ]),
+      Product.find({
+        stock: { $lt: 10, $gt: 0 },
+        $nor: [{ stock: { $gte: 999 } }]
+      }).select('name stock category').limit(10),
+      Order.find()
+        .sort({ createdAt: -1 })
+        .limit(10)
+        .populate('userId', 'username email'),
+      Order.aggregate([
+        { $match: { status: { $ne: 'cancelled' } } },
+        {
+          $facet: {
+            all: [
+              { $group: { _id: null, revenue: { $sum: '$totalAmount' } } }
+            ],
+            today: [
+              { $match: { createdAt: { $gte: startOfToday } } },
+              { $group: { _id: null, revenue: { $sum: '$totalAmount' }, count: { $sum: 1 } } }
+            ],
+            week: [
+              { $match: { createdAt: { $gte: startOfWeek } } },
+              { $group: { _id: null, revenue: { $sum: '$totalAmount' }, count: { $sum: 1 } } }
+            ],
+            month: [
+              { $match: { createdAt: { $gte: startOfMonth } } },
+              { $group: { _id: null, revenue: { $sum: '$totalAmount' }, count: { $sum: 1 } } }
+            ]
+          }
         }
-      },
-      { $sort: { totalSales: -1 } },
-      { $limit: 5 }
+      ])
     ]);
 
-    // Low stock products
-    const lowStockProducts = await Product.find({
-      stock: { $lt: 10, $gt: 0 },
-      $nor: [{ stock: { $gte: 999 } }]
-    }).select('name stock category').limit(10);
-
-    // Recent orders
-    const recentOrders = await Order.find()
-      .sort({ createdAt: -1 })
-      .limit(10)
-      .populate('userId', 'username email');
+    const revenueData = revenueBuckets[0] || {};
+    const totalRevenue = revenueData.all?.[0]?.revenue || 0;
+    const todayStats = revenueData.today?.[0] || { revenue: 0, count: 0 };
+    const weekStats = revenueData.week?.[0] || { revenue: 0, count: 0 };
+    const monthStats = revenueData.month?.[0] || { revenue: 0, count: 0 };
 
     res.json({
       overview: {
@@ -981,14 +989,14 @@ app.get('/api/admin/stats', authenticateToken, adminLimiter, async (req, res) =>
         totalRevenue: totalRevenue.toFixed(2)
       },
       revenue: {
-        today: todayRevenue.toFixed(2),
-        week: weekRevenue.toFixed(2),
-        month: monthRevenue.toFixed(2)
+        today: todayStats.revenue.toFixed(2),
+        week: weekStats.revenue.toFixed(2),
+        month: monthStats.revenue.toFixed(2)
       },
       orders: {
-        today: todayOrders.length,
-        week: weekOrders.length,
-        month: monthOrders.length,
+        today: todayStats.count,
+        week: weekStats.count,
+        month: monthStats.count,
         byStatus: ordersByStatus
       },
       topProducts,
